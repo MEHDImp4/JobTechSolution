@@ -1,0 +1,44 @@
+from ninja import NinjaAPI
+
+from apps.accounts.api import admin_router
+from apps.accounts.api import router as accounts_router
+from apps.candidatures.api import router as candidatures_router
+from apps.entretiens.api import router as entretiens_router
+from apps.evaluations.api import router as evaluations_router
+from apps.notifications.api import router as notifications_router
+from apps.offres.api import router as offres_router
+from apps.statistiques.api import router as statistiques_router
+
+api = NinjaAPI(
+    title='JobTech API',
+    version='1.0.0',
+    description='Modern API for JobTech Solutions SPA',
+)
+
+@api.exception_handler(Exception)
+def global_exception_handler(request, exc):
+    import traceback
+    print(f"--- GLOBAL EXCEPTION ---")
+    print(f"Path: {request.path}")
+    print(f"Method: {request.method}")
+    print(f"Error: {exc}")
+    traceback.print_exc()
+    return api.create_response(request, {"message": str(exc)}, status=500)
+
+from ninja.errors import ValidationError
+@api.exception_handler(ValidationError)
+def validation_errors(request, exc):
+    print(f"--- VALIDATION ERROR ---")
+    print(f"Path: {request.path}")
+    print(f"Method: {request.method}")
+    print(f"Errors: {exc.errors}")
+    return api.create_response(request, {"message": "Validation Error", "errors": exc.errors}, status=400)
+
+api.add_router('/auth', accounts_router)
+api.add_router('/admin', admin_router)
+api.add_router('/offres', offres_router)
+api.add_router('/candidatures', candidatures_router)
+api.add_router('/statistiques', statistiques_router)
+api.add_router('/entretiens', entretiens_router)
+api.add_router('/evaluations', evaluations_router)
+api.add_router('/notifications', notifications_router)
