@@ -1,0 +1,20 @@
+# Manager pour User
+from django.contrib.auth.models import BaseUserManager
+
+
+class CustomUserManager(BaseUserManager):
+    def create_user(self, email, nom, prenom, password=None, **extra_fields):
+        if not email:
+            raise ValueError('Email obligatoire')
+        email = self.normalize_email(email)
+        user = self.model(email=email, nom=nom, prenom=prenom, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, nom, prenom, password, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('role', 'admin')
+        extra_fields.setdefault('is_active', True)
+        return self.create_user(email, nom, prenom, password, **extra_fields)

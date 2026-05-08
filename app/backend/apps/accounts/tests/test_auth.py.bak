@@ -1,0 +1,127 @@
+from unittest.mock import patch
+
+from django.contrib.auth import get_user_model
+from django.test import Client, TestCase
+from django.urls import reverse
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
+
+from apps.accounts.tokens import account_activation_token
+
+User = get_user_model()
+
+
+class AuthenticationTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.register_url = reverse('accounts:register')
+        self.login_url = reverse('accounts:login')
+        self.user_data = {
+            'email': 'test@example.com',
+            'nom': 'Doe',
+            'prenom': 'John',
+            'password1': 'Password123!',
+            'password2': 'Password123!',
+        }
+
+    @patch('apps.notifications.tasks.send_activation_email.delay')
+    def test_registration_flow(self, mock_send_email):
+        """Test user registration creates an inactive user and triggers email."""
+        response = self.client.post(self.register_url, self.user_data)
+
+        if response.status_code != 302:
+            print(f"\nREGISTRATION FORM ERRORS: {response.context['form'].errors}")
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('accounts:register_success'))
+
+        user = User.objects.get(email=self.user_data['email'])
+        self.assertFalse(user.is_active)
+        self.assertFalse(user.is_email_verified)
+        self.assertEqual(user.role, 'candidat')
+
+        # Verify email task was called
+        mock_send_email.assert_called_once()
+
+    def test_account_activation(self):
+        """Test account activation via token sets user as active."""
+        user = User.objects.create_user(
+            email='active@example.com',
+            nom='Active',
+            prenom='User',
+            password='password123',
+            is_active=False,
+            is_email_verified=False,
+        )
+
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = account_activation_token.make_token(user)
+        activation_url = reverse(
+            'accounts:activate', kwargs={'uidb64': uid, 'token': token}
+        )
+
+        response = self.client.get(activation_url)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, self.login_url)
+
+        user.refresh_from_db()
+        self.assertTrue(user.is_active)
+        self.assertTrue(user.is_email_verified)
+
+    def test_login_success(self):
+        """Test login with valid credentials for an active user."""
+        User.objects.create_user(
+            email='login@example.com',
+            nom='Login',
+            prenom='User',
+            password='password123',
+            is_active=True,
+            is_email_verified=True,
+        )
+
+        response = self.client.post(
+            self.login_url, {'username': 'login@example.com', 'password': 'password123'}
+        )
+
+        self.assertEqual(response.status_code, 302)
+        # Should redirect to some dashboard (defaulting to / in test if no specific dashboard exists)
+        self.assertTrue(response.url.startswith('/') or 'dashboard' in response.url)
+
+    def test_login_inactive_user(self):
+        """Test that inactive users cannot log in."""
+        User.objects.create_user(
+            email='inactive@example.com',
+            nom='Inactive',
+            prenom='User',
+            password='password123',
+            is_active=False,
+        )
+
+        response = self.client.post(
+            self.login_url,
+            {'username': 'inactive@example.com', 'password': 'password123'},
+        )
+
+        self.assertEqual(response.status_code, 200)  # Re-renders login form with error
+        self.assertContains(response, "Ce compte est inactif")
+        self.assertContains(response, "activation")
+
+    def test_brute_force_protection(self):
+        """Test that multiple failed login attempts block the account."""
+        email = 'brute@example.com'
+        # Mocking cache for this test to avoid dependency on real Redis
+        with (
+            patch('django.core.cache.cache.get') as mock_get,
+            patch('django.core.cache.cache.set'),
+        ):
+
+            # Simulate 5 failed attempts
+            mock_get.return_value = 5
+
+            response = self.client.post(
+                self.login_url, {'username': email, 'password': 'wrongpassword'}
+            )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, "Compte bloqué")
