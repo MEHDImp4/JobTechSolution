@@ -1,0 +1,53 @@
+{% extends "emails/base_email.html" %}
+{% block title %}Votre entretien a été planifié — JobTech Solutions{% endblock %}
+{% block body %}
+<h2>Entretien planifié</h2>
+<p>Bonjour <strong>{{ entretien.candidat.get_full_name }}</strong>,</p>
+<p>
+  Nous avons le plaisir de vous informer qu'un entretien a été planifié dans le cadre
+  de votre candidature.
+</p>
+
+<table style="width:100%;border-collapse:collapse;margin:20px 0;">
+  <tr>
+    <td style="padding:10px;background:#f8f9fa;border:1px solid #dee2e6;font-weight:600;width:40%;">Date et heure</td>
+    <td style="padding:10px;border:1px solid #dee2e6;">{{ date_fr }}</td>
+  </tr>
+  <tr>
+    <td style="padding:10px;background:#f8f9fa;border:1px solid #dee2e6;font-weight:600;">Durée</td>
+    <td style="padding:10px;border:1px solid #dee2e6;">{{ entretien.get_duree_minutes_display }}</td>
+  </tr>
+  <tr>
+    <td style="padding:10px;background:#f8f9fa;border:1px solid #dee2e6;font-weight:600;">Type</td>
+    <td style="padding:10px;border:1px solid #dee2e6;">{{ entretien.get_type_entretien_display }}</td>
+  </tr>
+  {% if entretien.lieu %}
+  <tr>
+    <td style="padding:10px;background:#f8f9fa;border:1px solid #dee2e6;font-weight:600;">Lieu</td>
+    <td style="padding:10px;border:1px solid #dee2e6;">{{ entretien.lieu }}</td>
+  </tr>
+  {% endif %}
+  {% if entretien.lien_visio %}
+  <tr>
+    <td style="padding:10px;background:#f8f9fa;border:1px solid #dee2e6;font-weight:600;">Lien visio</td>
+    <td style="padding:10px;border:1px solid #dee2e6;">
+      <a href="{{ entretien.lien_visio }}" style="color:#0d6efd;">{{ entretien.lien_visio }}</a>
+    </td>
+  </tr>
+  {% endif %}
+  <tr>
+    <td style="padding:10px;background:#f8f9fa;border:1px solid #dee2e6;font-weight:600;">Recruteur</td>
+    <td style="padding:10px;border:1px solid #dee2e6;">{{ entretien.recruteur.get_full_name }}</td>
+  </tr>
+</table>
+
+<p>
+  Merci de vous assurer d'être disponible à l'heure indiquée. En cas d'empêchement,
+  veuillez contacter votre recruteur dès que possible.
+</p>
+<p>Bonne chance pour votre entretien !</p>
+<hr class="divider">
+<p class="text-muted">
+  Cet e-mail est généré automatiquement par JobTech Solutions. Merci de ne pas y répondre directement.
+</p>
+{% endblock %}
