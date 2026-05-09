@@ -9,7 +9,12 @@ from .serializers import EntretienCreateSerializer, EntretienSerializer
 
 
 class EntretienViewSet(viewsets.ModelViewSet):
-    queryset = Entretien.objects.all()
+    queryset = Entretien.objects.select_related(
+        'candidat',
+        'recruteur',
+        'candidature',
+        'candidature__offre',
+    ).prefetch_related('objectifs')
     serializer_class = EntretienSerializer
     permission_classes = [IsAuthenticated]
 
@@ -34,25 +39,25 @@ class EntretienViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        offre = serializer.save()
-        return Response(EntretienSerializer(offre).data, status=status.HTTP_201_CREATED)
+        entretien = serializer.save()
+        return Response(EntretienSerializer(entretien).data, status=status.HTTP_201_CREATED)
 
     # Mettre a jour les notes
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['patch', 'post'])
     def notes(self, request, pk=None):
         entretien = self.get_object()
         notes = request.data.get('notes', '')
         entretien.notes = notes
         entretien.save(update_fields=['notes'])
-        return Response({'notes': notes})
+        return Response(EntretienSerializer(entretien).data)
 
     # Changer le statut
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['patch', 'post'])
     def statut(self, request, pk=None):
         entretien = self.get_object()
         new_statut = request.data.get('statut')
-        if new_statut in ['planifie', 'termine', 'annule']:
+        if new_statut in ['planifie', 'en_cours', 'termine', 'annule']:
             entretien.statut = new_statut
             entretien.save(update_fields=['statut'])
-            return Response({'statut': new_statut})
+            return Response(EntretienSerializer(entretien).data)
         return Response({'statut': 'Statut invalide'}, status=400)

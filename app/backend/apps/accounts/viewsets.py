@@ -1,11 +1,15 @@
-# ViewSet pour les utilisateurs - remplacer l'API Ninja
+from django.db import models
+from django.contrib.auth import authenticate, login, logout
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 
+from jobtech.pagination import StandardResultsSetPagination
+
 from .models import AuditLog, User
 from .serializers import (
+    AuditLogSerializer,
     PasswordChangeSerializer,
     ProfileUpdateSerializer,
     UserCreateSerializer,
@@ -16,6 +20,24 @@ from .serializers import (
 # ViewSet pour l'authentification (auth/)
 class AuthViewSet(viewsets.ViewSet):
     permission_classes = [AllowAny]
+
+    @staticmethod
+    def _login_error_response(email):
+        user = User.objects.filter(email__iexact=email).only('is_active').first()
+        if user is not None and not user.is_active:
+            return Response(
+                {
+                    'message': (
+                        "Ce compte est inactif. Veuillez vérifier votre email pour l'activation."
+                    ),
+                    'code': 'account_inactive',
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return Response(
+            {'message': 'Email ou mot de passe invalide.'},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
 
     def list(self, request):
         """GET /auth/ - retourne l'utilisateur connecte"""
@@ -38,36 +60,31 @@ class AuthViewSet(viewsets.ViewSet):
 
     def create(self, request):
         """POST /auth/ - login"""
-        from django.contrib.auth import authenticate, login
         email = request.data.get('email', '').strip().lower()
         password = request.data.get('password', '')
         user = authenticate(request, username=email, password=password)
+        if user is None:
+            user = authenticate(request, email=email, password=password)
         if user is not None:
             login(request, user)
             return Response(UserSerializer(user).data)
-        return Response(
-            {'message': 'Email ou mot de passe invalide.'},
-            status=status.HTTP_401_UNAUTHORIZED
-        )
+        return self._login_error_response(email)
 
     @action(detail=False, methods=['post'])
     def login(self, request):
         """POST /auth/login - login"""
-        from django.contrib.auth import authenticate, login
         email = request.data.get('email', '').strip().lower()
         password = request.data.get('password', '')
         user = authenticate(request, username=email, password=password)
+        if user is None:
+            user = authenticate(request, email=email, password=password)
         if user is not None:
             login(request, user)
             return Response(UserSerializer(user).data)
-        return Response(
-            {'message': 'Email ou mot de passe invalide.'},
-            status=status.HTTP_401_UNAUTHORIZED
-        )
+        return self._login_error_response(email)
 
     def destroy(self, request):
         """DELETE /auth/ - logout"""
-        from django.contrib.auth import logout
         logout(request)
         return Response({'message': 'Deconnexion reussie'})
 
@@ -77,6 +94,24 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        queryset = super().get_queryset().order_by('-date_joined')
+
+        role = self.request.query_params.get('role')
+        if role:
+            queryset = queryset.filter(role=role)
+
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                models.Q(email__icontains=search)
+                | models.Q(nom__icontains=search)
+                | models.Q(prenom__icontains=search)
+            )
+
+        return queryset
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -170,9 +205,22 @@ class UserViewSet(viewsets.ModelViewSet):
 
 # ViewSet pour les logs d'audit - lecture seule
 class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = AuditLog.objects.all()
-    serializer_class = UserSerializer
+    queryset = AuditLog.objects.select_related('user').all()
+    serializer_class = AuditLogSerializer
     permission_classes = [IsAdminUser]
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        queryset = super().get_queryset().order_by('-timestamp')
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                models.Q(user__email__icontains=search)
+                | models.Q(action__icontains=search)
+                | models.Q(model_name__icontains=search)
+                | models.Q(endpoint__icontains=search)
+            )
+        return queryset
 
 
 # Fonction simple pour lister les logs

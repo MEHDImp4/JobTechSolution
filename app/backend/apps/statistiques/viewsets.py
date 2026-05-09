@@ -13,6 +13,12 @@ class KPIViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = KPISerializer
     permission_classes = [IsAuthenticated]
 
+    def list(self, request, *args, **kwargs):
+        from .kpi_calculator import RHKPICalculator
+
+        calc = RHKPICalculator()
+        return Response(calc.get_all())
+
 
 # Stats pour le dashboard RH
 @api_view(['GET'])

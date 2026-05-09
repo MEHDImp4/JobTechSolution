@@ -14,6 +14,5 @@ class DashboardStatsSerializer(serializers.Serializer):
     total_offres = serializers.IntegerField()
     total_candidatures = serializers.IntegerField()
     total_entretiens = serializers.IntegerField()
-    taux_conversion = serializers.FloatField()
-    delai_moyen_jours = serializers.FloatField()
-    score_ia_moyen = serializers.FloatField()
+    recrutements_reussis = serializers.IntegerField()
+    top_candidats = serializers.ListField(child=serializers.DictField())

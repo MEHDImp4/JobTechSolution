@@ -1,6 +1,6 @@
 # Serialiseur pour le modele User
 from rest_framework import serializers
-from .models import User
+from .models import AuditLog, User
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -47,3 +47,21 @@ class PasswordChangeSerializer(serializers.Serializer):
         if data['new_password'] != data['new_password_confirm']:
             raise serializers.ValidationError({'new_password_confirm': 'Les mots de passe ne correspondent pas.'})
         return data
+
+
+class AuditLogSerializer(serializers.ModelSerializer):
+    user_email = serializers.EmailField(source='user.email', read_only=True, allow_null=True)
+
+    class Meta:
+        model = AuditLog
+        fields = [
+            'id',
+            'user_email',
+            'action',
+            'model_name',
+            'object_id',
+            'ip_address',
+            'user_agent',
+            'timestamp',
+            'endpoint',
+        ]

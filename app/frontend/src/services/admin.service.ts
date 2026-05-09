@@ -1,17 +1,19 @@
 import { apiGet, apiPost, apiPatch, apiPostForm } from './client'
 import type { User, AuditLog, ImportResult } from '@/types/auth'
+import type { PaginatedResponse } from '@/types/pagination'
 
 export const adminService = {
-  listUsers: (params?: { role?: string; search?: string }) =>
-    apiGet<User[]>('admin/users', params as Record<string, string>),
+  listUsers: (params?: { role?: string; search?: string; page?: string; page_size?: string }) =>
+    apiGet<PaginatedResponse<User>>('users', params as Record<string, string>),
 
   updateUser: (id: number, data: { role?: string; is_active?: boolean }) =>
-    apiPatch<User>(`admin/users/${id}`, data),
+    apiPatch<User>(`users/${id}`, data),
 
-  toggleActive: (id: number) => apiPost<User>(`admin/users/${id}/toggle-active`),
+  toggleActive: (id: number) => apiPost<User>(`users/${id}/toggle-active`),
 
   importUsers: (formData: FormData) =>
-    apiPostForm<ImportResult>('admin/users/import', formData),
+    apiPostForm<ImportResult>('users/import', formData),
 
-  auditLogs: () => apiGet<AuditLog[]>('admin/audit-logs'),
+  auditLogs: (params?: { search?: string; page?: string; page_size?: string }) =>
+    apiGet<PaginatedResponse<AuditLog>>('audit', params as Record<string, string>),
 }

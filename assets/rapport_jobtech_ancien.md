@@ -65,15 +65,14 @@ application web moderne développée dans le cadre du projet Python à l'EMSI. C
 moderniser et automatiser la gestion des ressources humaines, du recrutement aux évaluations.
 
 La solution repose sur une architecture moderne de Single Page Application (SPA) utilisant React 19
-avec Vite pour le frontend, et une API REST développée avec Django + Django REST Framework pour le
-backend. Les données sont persistées dans MySQL (avec un fallback SQLite pour le développement et
-certains tests). L'intelligence artificielle est au cœur du système, combinant du NLP local (SpaCy,
-Scikit-learn) et des Large Language Models (LLM) via l'API NVIDIA NIM (Llama-3.3-70b) pour l'analyse
-de sentiment, la génération de questions d'entretien et les recommandations de recrutement. La
-plateforme intègre également une salle de visioconférence pour les entretiens à distance via Jitsi.
+avec Vite pour le frontend, et une API REST performante développée avec Django Ninja pour le
+backend. Les données sont persistées dans PostgreSQL. L'intelligence artificielle est au cœur du
+système, combinant du NLP local (SpaCy, Scikit-learn) et des Large Language Models (LLM) avancés
+via l'API NVIDIA NIM (Llama-3.3-70b) pour l'analyse de sentiment, la génération de questions
+d'entretien et les recommandations de recrutement.
 
-**Mots-clés :** React 19, Django, Django REST Framework, MySQL, Celery, NVIDIA NIM, NLP, Jitsi,
-PWA, Docker.
+**Mots-clés :** React 19, Django Ninja, PostgreSQL, LLM, NVIDIA NIM, NLP, SaaS, Multi-tenancy,
+Machine Learning, Docker.
 
 **A b s t r a c t**
 
@@ -81,14 +80,13 @@ This document presents the technical specifications of the JobTech Solutions pro
 recruitment and performance management platform. Developed as part of a Python programming
 course at EMSI, the solution features a high-end SPA architecture.
 
-The system is built with React 19 (Vite) on the frontend and a Django REST API (Django + Django REST
-Framework) on the backend, powered by a MySQL database (with an SQLite fallback for local
-development/testing). It integrates advanced AI capabilities, leveraging both
+The system is built with React 19 (Vite) on the frontend and Django Ninja (API REST) on the
+backend, powered by a PostgreSQL database. It integrates advanced AI capabilities, leveraging both
 local NLP pipelines and state-of-the-art LLMs (Llama-3.3-70b) provided by NVIDIA NIM for interview
 intelligence, sentiment analysis, and automated hiring recommendations.
 
-**Keywords:** React 19, Django, Django REST Framework, MySQL, Celery, NVIDIA NIM, NLP, Jitsi, PWA,
-Docker.
+**Keywords:** React 19, Django Ninja, PostgreSQL, LLM, NVIDIA NIM, NLP, SaaS, Multi-tenancy,
+Machine Learning, Docker.
 
 
 ## Table des Matières
@@ -166,7 +164,7 @@ Tableau 3 : Budget global alloué au projet
 Tableau 4 : Allocation détaillée des tâches par module
 
 Tableau 5 : Stack technologique moderne (React/Django)
-Tableau 6 : Exigences non fonctionnelles (Performance, Sécurité, Maintenabilité)
+Tableau 6 : Exigences non fonctionnelles (Performance, Sécurité, SaaS)
 
 
 **Liste des Abréviations**
@@ -268,10 +266,10 @@ JobTech Solutions répond à ces problèmes avec cinq objectifs fondamentaux :
     analyse de sentiment des notes RH, et export PDF automatisé.
 3. Intégrer l'IA Avancée : combinaison de NLP local (SpaCy) et de Large Language Models
     (LLM - NVIDIA NIM) pour une évaluation objective et approfondie des candidats.
-4. Couverture fonctionnelle complète : gestion des offres, candidatures, planification des
-    entretiens, évaluations, statistiques, notifications et génération de rapports PDF.
-5. Expérience utilisateur moderne : interfaces responsives, animations fluides (Framer Motion),
-    PWA (installation mobile) et salle de visioconférence (Jitsi) pour les entretiens à distance.
+4. Architecture SaaS Multi-tenant : isolation stricte des données par société, permettant
+    une utilisation multi-entreprises sécurisée sur une infrastructure PostgreSQL unique.
+5. Gestion Moderne de l'UI/UX : interfaces "Curated Executive" réponsives, avec support
+    natif du Dark Mode et animations fluides (Framer Motion).
 
 #### 1.3 Étude de l'Existant
 
@@ -287,8 +285,8 @@ principales conclusions sont les suivantes :
 - OpenCATS, Orange HRM : open-source mais interface datée, peu de fonctionnalités IA,
     et maintenance communautaire incertaine.
 
-✅ Positionnement de JobTech Solutions : plateforme web moderne (React/Django) combinant les
-fonctionnalités essentielles d'un ATS avec des capacités IA/LLM, orchestrée dans une
+✅ Positionnement de JobTech Solutions : solution SaaS moderne (React/Django) combinant les
+fonctionnalités essentielles d'un ATS avec des capacités LLM de pointe, orchestrée dans une
 infrastructure Docker évolutive.
 
 ### 2. Organisation
@@ -346,8 +344,8 @@ jour en temps réel (✅ Terminé, 🔄 En cours, ⬜ Planifié) :
 
 **Sprint Durée Thème Objectifs Responsable État
 S1** 2
-sem. **Initialisation** Env. Docker/MySQL, API Django REST,
-Auth RBAC, AuditLog
+sem. **Initialisation** Env. Docker/PostgreSQL, Django Ninja,
+Auth RBAC, Middleware Tenant/Audit
 Diouri M. ✅
 Livré
 **S2** 2
@@ -376,13 +374,13 @@ sentiment notes, recommandations
 Assaadi+El K. ✅
 Livré
 **S7** 2
-sem. **Dashboard RH** KPIs React (Recharts), statistiques
-et filtres avancés
+sem. **Dashboard RH** KPIs React (Recharts), architecture
+Saas Multi-tenant
 El Kharrazi I. ✅
 Livré
 **S8** 1
 sem. **Déploiement** Architecture Docker Compose, Nginx SSL,
-Sauvegardes MySQL
+Sauvegardes PostgreSQL
 Diouri M. ✅
 Livré
 
@@ -466,19 +464,20 @@ De haut en bas, les cinq couches sont :
 - Couche Présentation (Frontend React) : Single Page Application développée avec
     React 19 et Vite. Utilisation de Tailwind CSS 4 pour le style, TanStack Query pour la
     gestion d'état asynchrone, et Framer Motion pour les animations.
-- Couche Serveur API (Django REST Framework) : le backend expose une API REST
-    sécurisée. Les communications frontend-backend passent par des endpoints protégés
-    (sessions Django, CSRF et contrôle d'accès par rôle).
-- Couche Sécurité & Audit : journalisation des actions (AuditLog) et injection de permissions
-    côté serveur (RBAC) afin de contrôler les opérations selon le rôle (admin, rh, recruteur, candidat).
+- Couche Serveur API (Django Ninja) : le backend expose une API REST ultra-performante
+    utilisant Django Ninja. Toutes les communications frontend-backend passent par des
+    points de terminaison sécurisés (Session Auth + CSRF protection).
+- Couche Multi-tenancy / Middleware : isolation logique des données via `TenantMiddleware`.
+    Chaque requête identifie la société (Tenant) associée à l'utilisateur et filtre les données en
+    conséquence (Scoping). Un middleware d'audit background suit toutes les actions.
 
 
 - Couche Services IA (Celery/LLM) : traitement asynchrone des CV. Intègre SpaCy pour le
     NLP local et une interface vers les LLM (Llama-3.3-70b via NVIDIA NIM) pour l'analyse
     profonde. Communication via Redis. OCR supporté pour les documents scannés.
-- Couche Données (MySQL / SQLite fallback) : base de données relationnelle stockant
-    les entités métier (utilisateurs, offres, candidatures, entretiens, évaluations, logs). MySQL
-    est utilisée en environnement standard, avec un fallback SQLite pour le développement local.
+- Couche Données (PostgreSQL) : base de données relationnelle robuste stockant toutes
+    les entités (Candidats, Offres, Sociétés, Logs). Isolation SaaS via des Foreign Keys sur
+    la table Company sur chaque modèle métier.
 
 #### 1.2 Composants par Couche............................................................................................................
 
@@ -524,13 +523,14 @@ Les relations entre classes suivent des cardinalités strictes reflétant les r�
 
 ### 3. Schéma de la Base de Données (ERD)
 
-#### 3.1 Modèle Entité-Relation (MySQL)
-Le schéma ERD définit la structure physique de la base MySQL. Les tables métier principales
-(Utilisateur, Offre, Candidature, Entretien, Evaluation, AuditLog) sont reliées par des clés
-étrangères et des contraintes garantissant la cohérence du processus de recrutement.
+#### 3.1 Modèle Entité-Relation (SaaS)
+Le schéma ERD définit la structure physique de la base PostgreSQL. La principale évolution est
+l'introduction de la table `Company` (le pivot du SaaS) et de la colonne `company_id` dans toutes
+les tables métier (Candidature, Offre, Entretien, AuditLog). Cela permet une isolation stricte des
+données entre les différentes entreprises clientes de la plateforme.
 
 ```
-Figure 7 : Schéma Entité-Relation (ERD) — Base de données MySQL
+Figure 7 : Schéma Entité-Relation (ERD) — Base de données PostgreSQL (Architecture SaaS)
 ```
 #### 3.2 Contraintes et Index
 
@@ -876,14 +876,6 @@ KPIs calculés dynamiquement : taux de conversion par étape du funnel, délai m
 recrutement, distribution des scores IA, évolution des performances annuelles N vs N-1.
 Graphiques générés côté serveur (Matplotlib) et transmis en base64. Filtres par période,
 département, recruteur.
-
-▸ **Module 7 — Visioconférence (Jitsi)**
-
-Pour les entretiens à distance, l'application propose une salle vidéo intégrée. Lors de la
-planification, un lien de visioconférence peut être associé à l'entretien. L'interface « VideoRoom »
-embarque Jitsi via l'API IFrame (chargement de `external_api.js`) et expose des interactions
-utiles au recruteur (chat, panneau latéral, actions de session). L'accès à la salle est contrôlé côté
-application afin de limiter l'entrée aux participants concernés.
 
 ### 2. Spécification Détaillée des Cas d'Utilisation
 
@@ -2230,8 +2222,8 @@ complet
 UC- 03 **Auth & Sécurité S1** (^) ✅ Livré
 **BF-
 13**
-Visioconférence
-(Jitsi)
+Architecture SaaS
+Multi-tenant
 UC- 04 **Auth & Sécurité S7** ✅ Livré
 **BF-
 14**
@@ -2599,14 +2591,15 @@ nouveaux standards "Executive" :
 
 Le projet JobTech Solutions a franchi une étape majeure avec sa migration vers la version 2.0.
 Nous sommes passés d'un monolithe Django MVT à une architecture SPA moderne et robuste,
-fondée sur React 19, une API Django REST (DRF) et MySQL. Cette évolution a non seulement amélioré la
+fondée sur React 19, Django Ninja et PostgreSQL. Cette évolution a non seulement amélioré la
 fluidité de l'interface mais a aussi ouvert la voie à l'intégration massive de l'Intelligence
 Artificielle générative.
 
 L'utilisation des Large Language Models (LLM) comme Llama 3.3 via NVIDIA NIM transforme la
 plateforme en un véritable assistant RH intelligent, capable d'analyser, résumer et même suggérer
-des décisions de recrutement avec une précision inégalée. Les modules d'audit, de notifications et
-de reporting garantissent une traçabilité complète et un suivi fiable du processus RH.
+des décisions de recrutement avec une précision inégalée. L'architecture SaaS garantit que la
+solution est prête pour une exploitation commerciale multi-entreprises, avec une isolation stricte
+des données et une traçabilité complète.
 
 💡 Ce projet démontre l'excellence technologique accessible en combinant l'écosystème Python
 pour le backend et les services IA, avec la puissance de React 19 pour le frontend exécutif.

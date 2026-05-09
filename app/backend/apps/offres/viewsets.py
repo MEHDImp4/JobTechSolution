@@ -5,14 +5,22 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
+from jobtech.pagination import StandardResultsSetPagination
+
 from .models import Competence, Offre
-from .serializers import OffreCreateSerializer, OffreListSerializer, OffreSerializer
+from .serializers import (
+    CompetenceSerializer,
+    OffreCreateSerializer,
+    OffreListSerializer,
+    OffreSerializer,
+)
 
 
 class OffreViewSet(viewsets.ModelViewSet):
     queryset = Offre.objects.all()
     serializer_class = OffreSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -40,6 +48,10 @@ class OffreViewSet(viewsets.ModelViewSet):
         if type_contrat:
             qs = qs.filter(type_contrat=type_contrat)
 
+        statut = self.request.query_params.get('statut')
+        if statut:
+            qs = qs.filter(statut=statut)
+
         return qs.order_by('-created_at')
 
     def is_rh(self):
@@ -52,7 +64,7 @@ class OffreViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        offre = serializer.save()
+        offre = serializer.save(created_by=request.user)
         return Response(OffreSerializer(offre).data, status=status.HTTP_201_CREATED)
 
     # Autocompletion pour les competences
@@ -66,4 +78,5 @@ class OffreViewSet(viewsets.ModelViewSet):
 
 class CompetenceViewSet(viewsets.ModelViewSet):
     queryset = Competence.objects.all()
-    serializer_class = OffreListSerializer
+    serializer_class = CompetenceSerializer
+    permission_classes = [AllowAny]

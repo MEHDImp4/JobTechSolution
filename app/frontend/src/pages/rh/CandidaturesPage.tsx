@@ -6,6 +6,7 @@ import { toast } from '@/components/feedback/Toast'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { Input } from '@/components/ui/Input'
+import { PaginationControls } from '@/components/ui/PaginationControls'
 import { candidaturesService } from '@/services/candidatures.service'
 import { offresService } from '@/services/offres.service'
 import { CANDIDATURE_STATUTS, IA_STATUS } from '@/lib/constants'
@@ -19,6 +20,10 @@ import { CandidatureIAModal } from '@/components/rh/CandidatureIAModal'
 
 export default function CandidaturesPage() {
   const [offres, setOffres] = useState<Offre[]>([])
+  const [offresPage, setOffresPage] = useState(1)
+  const [offresHasNext, setOffresHasNext] = useState(false)
+  const [offresHasPrevious, setOffresHasPrevious] = useState(false)
+  const [offresTotal, setOffresTotal] = useState(0)
   const [selectedOffre, setSelectedOffre] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -29,9 +34,16 @@ export default function CandidaturesPage() {
   useEffect(() => {
     async function load() {
       try {
-        const data = await offresService.list()
+        const response = await offresService.list({
+          page: String(offresPage),
+          page_size: '12',
+        })
+        const data = response.results
         setOffres(data)
-        if (data.length > 0 && !selectedOffre) {
+        setOffresTotal(response.count)
+        setOffresHasNext(Boolean(response.next))
+        setOffresHasPrevious(Boolean(response.previous))
+        if (data.length > 0 && (!selectedOffre || !data.some((offre) => offre.id === selectedOffre))) {
           const firstActive = data.find(o => o.statut === 'publiee') || data[0]
           setSelectedOffre(firstActive.id)
         }
@@ -42,7 +54,7 @@ export default function CandidaturesPage() {
       }
     }
     load()
-  }, [])
+  }, [offresPage, selectedOffre])
 
   const filteredOffres = useMemo(() => {
     return offres.filter(o => {
@@ -136,6 +148,16 @@ export default function CandidaturesPage() {
             ))
           )}
         </div>
+        <div className="border-t border-gray-100 dark:border-white/5 p-2">
+          <PaginationControls
+            page={offresPage}
+            pageSize={12}
+            total={offresTotal}
+            hasNext={offresHasNext}
+            hasPrevious={offresHasPrevious}
+            onPageChange={setOffresPage}
+          />
+        </div>
       </div>
 
       {/* Main Content: Candidatures List */}
@@ -197,7 +219,12 @@ export default function CandidaturesPage() {
 
 
 function CandidatureList({ offreId, viewMode }: { offreId: number, viewMode: 'table' | 'kanban' }) {
+  const PAGE_SIZE = 10
   const [candidatures, setCandidatures] = useState<Candidature[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+  const [hasNext, setHasNext] = useState(false)
+  const [hasPrevious, setHasPrevious] = useState(false)
   const [loading, setLoading] = useState(true)
   const [statusModal, setStatusModal] = useState<Candidature | null>(null)
   const [interviewModal, setInterviewModal] = useState<Candidature | null>(null)
@@ -210,8 +237,16 @@ function CandidatureList({ offreId, viewMode }: { offreId: number, viewMode: 'ta
       setLoading(true)
       setSelectedIds(new Set())
       try {
-        const data = await candidaturesService.getByOffre(offreId)
-        if (!ignore) setCandidatures(data)
+        const response = await candidaturesService.getByOffre(offreId, {
+          page: String(page),
+          page_size: String(PAGE_SIZE),
+        })
+        if (!ignore) {
+          setCandidatures(response.results)
+          setTotal(response.count)
+          setHasNext(Boolean(response.next))
+          setHasPrevious(Boolean(response.previous))
+        }
       } catch {
         if (!ignore) setCandidatures([])
       } finally {
@@ -220,6 +255,10 @@ function CandidatureList({ offreId, viewMode }: { offreId: number, viewMode: 'ta
     }
     fetchCandidatures()
     return () => { ignore = true }
+  }, [offreId, page])
+
+  useEffect(() => {
+    setPage(1)
   }, [offreId])
 
   async function handleStatusChange(id: number, statut: string) {
@@ -227,8 +266,14 @@ function CandidatureList({ offreId, viewMode }: { offreId: number, viewMode: 'ta
       await candidaturesService.updateStatus(id, statut)
       toast('success', 'Statut mis à jour')
       setStatusModal(null)
-      const data = await candidaturesService.getByOffre(offreId)
-      setCandidatures(data)
+      const response = await candidaturesService.getByOffre(offreId, {
+        page: String(page),
+        page_size: String(PAGE_SIZE),
+      })
+      setCandidatures(response.results)
+      setTotal(response.count)
+      setHasNext(Boolean(response.next))
+      setHasPrevious(Boolean(response.previous))
     } catch {
       toast('error', 'Erreur lors de la mise à jour')
     }
@@ -240,8 +285,14 @@ function CandidatureList({ offreId, viewMode }: { offreId: number, viewMode: 'ta
       await candidaturesService.bulkUpdateStatus(Array.from(selectedIds), statut)
       toast('success', `${selectedIds.size} candidatures mises à jour`)
       setSelectedIds(new Set())
-      const data = await candidaturesService.getByOffre(offreId)
-      setCandidatures(data)
+      const response = await candidaturesService.getByOffre(offreId, {
+        page: String(page),
+        page_size: String(PAGE_SIZE),
+      })
+      setCandidatures(response.results)
+      setTotal(response.count)
+      setHasNext(Boolean(response.next))
+      setHasPrevious(Boolean(response.previous))
     } catch {
       toast('error', 'Erreur lors de la mise à jour groupée')
     }
@@ -271,7 +322,19 @@ function CandidatureList({ offreId, viewMode }: { offreId: number, viewMode: 'ta
   }
 
   if (viewMode === 'kanban') {
-    return <KanbanBoard candidatures={candidatures} onStatusChange={handleStatusChange} />
+    return (
+      <div className="space-y-4">
+        <KanbanBoard candidatures={candidatures} onStatusChange={handleStatusChange} />
+        <PaginationControls
+          page={page}
+          pageSize={PAGE_SIZE}
+          total={total}
+          hasNext={hasNext}
+          hasPrevious={hasPrevious}
+          onPageChange={setPage}
+        />
+      </div>
+    )
   }
 
   return (
@@ -437,6 +500,14 @@ function CandidatureList({ offreId, viewMode }: { offreId: number, viewMode: 'ta
               )
             })}
           </div>
+          <PaginationControls
+            page={page}
+            pageSize={PAGE_SIZE}
+            total={total}
+            hasNext={hasNext}
+            hasPrevious={hasPrevious}
+            onPageChange={setPage}
+          />
         </div>
       </div>
 

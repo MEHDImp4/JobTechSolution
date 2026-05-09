@@ -6,31 +6,42 @@ import { StatusBadge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
 import { LoadingState, ErrorState, EmptyState } from '@/components/feedback/States'
 import { toast } from '@/components/feedback/Toast'
+import { PaginationControls } from '@/components/ui/PaginationControls'
 import { adminService } from '@/services/admin.service'
 import { ROLES, type UserRole } from '@/lib/constants'
 import { formatDate } from '@/lib/utils'
 import type { User } from '@/types/auth'
 
 export default function UsersPage() {
+  const PAGE_SIZE = 10
   const [users, setUsers] = useState<User[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+  const [hasNext, setHasNext] = useState(false)
+  const [hasPrevious, setHasPrevious] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
+  const [appliedSearch, setAppliedSearch] = useState('')
   const [filterRole, setFilterRole] = useState('')
   const [importModal, setImportModal] = useState(false)
 
   useEffect(() => {
     loadUsers()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterRole])
+  }, [filterRole, page, appliedSearch])
 
   async function loadUsers() {
     setLoading(true)
     try {
-      const params: Record<string, string> = {}
+      const params: Record<string, string> = { page: String(page), page_size: String(PAGE_SIZE) }
       if (filterRole) params.role = filterRole
-      if (search) params.search = search
-      setUsers(await adminService.listUsers(params))
+      if (appliedSearch) params.search = appliedSearch
+      const response = await adminService.listUsers(params)
+      setUsers(response.results)
+      setTotal(response.count)
+      setHasNext(Boolean(response.next))
+      setHasPrevious(Boolean(response.previous))
     } catch {
       setError('Impossible de charger les utilisateurs')
     } finally {
@@ -79,7 +90,11 @@ export default function UsersPage() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <form
-          onSubmit={(e) => { e.preventDefault(); loadUsers() }}
+          onSubmit={(e) => {
+            e.preventDefault()
+            setPage(1)
+            setAppliedSearch(search)
+          }}
           className="flex-1 flex gap-2"
         >
           <div className="flex-1">
@@ -89,7 +104,10 @@ export default function UsersPage() {
         </form>
         <select
           value={filterRole}
-          onChange={(e) => setFilterRole(e.target.value)}
+          onChange={(e) => {
+            setFilterRole(e.target.value)
+            setPage(1)
+          }}
           className="h-10 px-3 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-200 cursor-pointer outline-none focus:ring-2 focus:ring-brand-500/20"
         >
           <option value="">Tous les rôles</option>
@@ -150,6 +168,14 @@ export default function UsersPage() {
               </tbody>
             </table>
           </div>
+          <PaginationControls
+            page={page}
+            pageSize={PAGE_SIZE}
+            total={total}
+            hasNext={hasNext}
+            hasPrevious={hasPrevious}
+            onPageChange={setPage}
+          />
         </div>
       )}
 

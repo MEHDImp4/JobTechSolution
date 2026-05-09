@@ -5,7 +5,7 @@ export const statistiquesService = {
   rhDashboard: () => apiGet<RHDashboardStats>('statistiques/rh'),
 
   kpis: (periode: string = '30d') =>
-    apiGet<KPIData>('statistiques/kpis', { periode }),
+    apiGet<KPIData>('kpi', { periode }),
 
   exportCsvUrl: (periode: string = '30d') =>
     `/api/statistiques/export-csv?periode=${periode}`,

@@ -74,6 +74,37 @@ class RHKPICalculator:
                 counter.update(competences)
         return counter.most_common(n)
 
+    def get_dashboard_stats(self) -> dict:
+        from apps.offres.models import Offre
+
+        top_candidats = []
+        top_qs = (
+            self.qs.select_related('candidat', 'offre')
+            .exclude(score_ia__isnull=True)
+            .order_by('-score_ia')[:5]
+        )
+
+        for candidature in top_qs:
+            full_name = candidature.candidat.get_full_name
+            if callable(full_name):
+                full_name = full_name()
+
+            top_candidats.append(
+                {
+                    'nom': full_name or candidature.candidat.email,
+                    'offre': candidature.offre.titre,
+                    'score': candidature.score_ia or 0,
+                }
+            )
+
+        return {
+            'total_offres': Offre.objects.filter(statut='publiee').count(),
+            'total_candidatures': self.qs.count(),
+            'total_entretiens': self.qs.filter(entretiens__isnull=False).distinct().count(),
+            'recrutements_reussis': self.qs.filter(statut='retenu').count(),
+            'top_candidats': top_candidats,
+        }
+
     def get_all(self) -> dict:
         return {
             'funnel': self.get_funnel(),

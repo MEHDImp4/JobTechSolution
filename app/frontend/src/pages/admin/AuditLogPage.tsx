@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Shield } from 'lucide-react'
 import { Input } from '@/components/ui/Input'
+import { PaginationControls } from '@/components/ui/PaginationControls'
 import { StatusBadge } from '@/components/ui/Badge'
 import { LoadingState, ErrorState, EmptyState } from '@/components/feedback/States'
 import { adminService } from '@/services/admin.service'
@@ -15,7 +16,12 @@ const ACTION_COLORS: Record<string, string> = {
 }
 
 export default function AuditLogPage() {
+  const PAGE_SIZE = 10
   const [logs, setLogs] = useState<AuditLog[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+  const [hasNext, setHasNext] = useState(false)
+  const [hasPrevious, setHasPrevious] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
@@ -23,7 +29,16 @@ export default function AuditLogPage() {
   useEffect(() => {
     async function load() {
       try {
-        setLogs(await adminService.auditLogs())
+        setLoading(true)
+        const response = await adminService.auditLogs({
+          page: String(page),
+          page_size: String(PAGE_SIZE),
+          search: search || undefined,
+        })
+        setLogs(response.results)
+        setTotal(response.count)
+        setHasNext(Boolean(response.next))
+        setHasPrevious(Boolean(response.previous))
       } catch {
         setError('Impossible de charger le journal d\'audit')
       } finally {
@@ -31,16 +46,7 @@ export default function AuditLogPage() {
       }
     }
     load()
-  }, [])
-
-  const filtered = search
-    ? logs.filter(
-        (l) =>
-          l.user_email?.toLowerCase().includes(search.toLowerCase()) ||
-          l.action.toLowerCase().includes(search.toLowerCase()) ||
-          l.model_name?.toLowerCase().includes(search.toLowerCase())
-      )
-    : logs
+  }, [page, search])
 
   if (loading) return <LoadingState />
   if (error) return <ErrorState message={error} />
@@ -61,11 +67,14 @@ export default function AuditLogPage() {
         <Input
           placeholder="Filtrer par utilisateur, action, modèle..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value)
+            setPage(1)
+          }}
         />
       </div>
 
-      {filtered.length === 0 ? (
+      {logs.length === 0 ? (
         <EmptyState title="Aucun log" description="Le journal est vide." />
       ) : (
         <>
@@ -84,7 +93,7 @@ export default function AuditLogPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-white/5">
-                  {filtered.map((log) => (
+                  {logs.map((log) => (
                     <tr key={log.id} className="hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors">
                       <td className="px-4 py-3 text-gray-500 dark:text-slate-400 text-xs whitespace-nowrap">
                         {formatDateTime(log.timestamp)}
@@ -103,11 +112,19 @@ export default function AuditLogPage() {
                 </tbody>
               </table>
             </div>
+            <PaginationControls
+              page={page}
+              pageSize={PAGE_SIZE}
+              total={total}
+              hasNext={hasNext}
+              hasPrevious={hasPrevious}
+              onPageChange={setPage}
+            />
           </div>
 
           {/* Mobile Card View */}
           <div className="md:hidden space-y-3">
-            {filtered.map((log) => (
+            {logs.map((log) => (
               <div key={log.id} className="bg-white dark:bg-slate-900/40 p-4 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm space-y-2">
                 <div className="flex justify-between items-start">
                   <div className="space-y-0.5">
@@ -134,6 +151,14 @@ export default function AuditLogPage() {
                 </div>
               </div>
             ))}
+            <PaginationControls
+              page={page}
+              pageSize={PAGE_SIZE}
+              total={total}
+              hasNext={hasNext}
+              hasPrevious={hasPrevious}
+              onPageChange={setPage}
+            />
           </div>
         </>
       )}

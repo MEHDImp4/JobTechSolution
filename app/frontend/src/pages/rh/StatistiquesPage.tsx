@@ -13,6 +13,22 @@ import type { KPIData } from '@/types/statistique'
 
 const COLORS = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444']
 const DARK_CHART_COLORS = ['#38bdf8', '#34d399', '#fbbf24', '#f87171']
+const EMPTY_KPI_DATA: KPIData = {
+  funnel: {
+    total: 0,
+    preselectionnes: 0,
+    entretiens: 0,
+    retenus: 0,
+    taux: 0,
+  },
+  delai_moyen: 0,
+  score_stats: {
+    avg: null,
+    max: null,
+    min: null,
+  },
+  top_competences: [],
+}
 
 
 export default function StatistiquesPage() {
@@ -39,7 +55,7 @@ export default function StatistiquesPage() {
       setLoading(true)
       try {
         const kpis = await statistiquesService.kpis(periode)
-        setData(kpis)
+        setData(kpis ?? EMPTY_KPI_DATA)
       } catch {
         setError('Impossible de charger les statistiques')
       } finally {
@@ -52,14 +68,16 @@ export default function StatistiquesPage() {
   if (loading) return <LoadingState />
   if (error || !data) return <ErrorState message={error} />
 
+  const safeData = data ?? EMPTY_KPI_DATA
+
   const funnelData = [
-    { name: 'Total', value: data.funnel.total },
-    { name: 'Présélectionnés', value: data.funnel.preselectionnes },
-    { name: 'Entretiens', value: data.funnel.entretiens },
-    { name: 'Retenus', value: data.funnel.retenus },
+    { name: 'Total', value: safeData.funnel.total },
+    { name: 'Présélectionnés', value: safeData.funnel.preselectionnes },
+    { name: 'Entretiens', value: safeData.funnel.entretiens },
+    { name: 'Retenus', value: safeData.funnel.retenus },
   ]
 
-  const competencesData = data.top_competences.map(([name, count]) => ({ name, count }))
+  const competencesData = safeData.top_competences.map(([name, count]) => ({ name, count }))
 
   return (
     <div className="space-y-6">
@@ -91,21 +109,21 @@ export default function StatistiquesPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <KPICard
           title="Taux de conversion"
-          value={`${data.funnel.taux.toFixed(1)}%`}
+          value={`${safeData.funnel.taux.toFixed(1)}%`}
           subtitle="Candidatures → Retenus"
           icon={<TrendingUp className="h-5 w-5" />}
         />
         <KPICard
           title="Délai moyen"
-          value={`${data.delai_moyen} jours`}
+          value={`${safeData.delai_moyen} jours`}
           subtitle="Candidature → Décision"
           icon={<TrendingUp className="h-5 w-5" />}
         />
         <KPICard
           title="Score IA moyen"
-          value={data.score_stats.avg ? `${data.score_stats.avg.toFixed(0)}%` : '—'}
-          subtitle={data.score_stats.min != null && data.score_stats.max != null
-            ? `Min ${data.score_stats.min.toFixed(0)}% · Max ${data.score_stats.max.toFixed(0)}%`
+          value={safeData.score_stats.avg ? `${safeData.score_stats.avg.toFixed(0)}%` : '—'}
+          subtitle={safeData.score_stats.min != null && safeData.score_stats.max != null
+            ? `Min ${safeData.score_stats.min.toFixed(0)}% · Max ${safeData.score_stats.max.toFixed(0)}%`
             : undefined
           }
           icon={<TrendingUp className="h-5 w-5" />}

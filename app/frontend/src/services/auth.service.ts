@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPatch } from './client'
+import { apiDelete, apiGet, apiPost, apiPatch } from './client'
 import type { AuthMeResponse, LoginPayload, MessageResponse, ProfileUpdatePayload, PasswordChangePayload, RegisterPayload, User } from '@/types/auth'
 
 export const authService = {
@@ -8,7 +8,7 @@ export const authService = {
 
   register: (data: RegisterPayload) => apiPost<MessageResponse>('auth/register', data),
 
-  logout: () => apiPost<MessageResponse>('auth/logout'),
+  logout: () => apiDelete<MessageResponse>('auth'),
 
   updateProfile: (data: ProfileUpdatePayload) => apiPatch<User>('auth/me', data),
 

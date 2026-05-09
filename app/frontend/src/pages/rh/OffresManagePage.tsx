@@ -4,6 +4,7 @@ import { Plus, Eye, Pencil, ToggleRight } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { StatusBadge } from '@/components/ui/Badge'
 import { JobCard } from '@/components/offres/JobCard'
+import { PaginationControls } from '@/components/ui/PaginationControls'
 import { LoadingState, ErrorState, EmptyState } from '@/components/feedback/States'
 import { toast } from '@/components/feedback/Toast'
 import { offresService } from '@/services/offres.service'
@@ -12,8 +13,13 @@ import { formatDate, formatSalary } from '@/lib/utils'
 import type { Offre } from '@/types/offre'
 
 export default function OffresManagePage() {
+  const PAGE_SIZE = 10
   const navigate = useNavigate()
   const [offres, setOffres] = useState<Offre[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+  const [hasNext, setHasNext] = useState(false)
+  const [hasPrevious, setHasPrevious] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [filterStatut, setFilterStatut] = useState('')
@@ -21,14 +27,18 @@ export default function OffresManagePage() {
   useEffect(() => {
     loadOffres()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterStatut])
+  }, [filterStatut, page])
 
   async function loadOffres() {
     setLoading(true)
     try {
-      const params: Record<string, string> = {}
+      const params: Record<string, string> = { page: String(page), page_size: String(PAGE_SIZE) }
       if (filterStatut) params.statut = filterStatut
-      setOffres(await offresService.list(params))
+      const response = await offresService.list(params)
+      setOffres(response.results)
+      setTotal(response.count)
+      setHasNext(Boolean(response.next))
+      setHasPrevious(Boolean(response.previous))
     } catch {
       setError('Impossible de charger les offres')
     } finally {
@@ -68,7 +78,10 @@ export default function OffresManagePage() {
         ].map((f) => (
           <button
             key={f.value}
-            onClick={() => setFilterStatut(f.value)}
+            onClick={() => {
+              setFilterStatut(f.value)
+              setPage(1)
+            }}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
               filterStatut === f.value
                 ? 'bg-brand-600 text-white shadow-glow-blue'
@@ -164,6 +177,14 @@ export default function OffresManagePage() {
                 </tbody>
               </table>
             </div>
+            <PaginationControls
+              page={page}
+              pageSize={PAGE_SIZE}
+              total={total}
+              hasNext={hasNext}
+              hasPrevious={hasPrevious}
+              onPageChange={setPage}
+            />
           </div>
 
           {/* Mobile Card View */}
@@ -176,6 +197,14 @@ export default function OffresManagePage() {
                 onToggleStatus={handleToggle}
               />
             ))}
+            <PaginationControls
+              page={page}
+              pageSize={PAGE_SIZE}
+              total={total}
+              hasNext={hasNext}
+              hasPrevious={hasPrevious}
+              onPageChange={setPage}
+            />
           </div>
         </>
       )}

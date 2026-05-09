@@ -12,10 +12,9 @@ class CompetenceSerializer(serializers.ModelSerializer):
 
 # Serialiseur pour une offre complete
 class OffreSerializer(serializers.ModelSerializer):
-    competences = serializers.PrimaryKeyRelatedField(
-        queryset=Competence.objects.all(),
-        many=True,
-        required=False
+    competences = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
     )
     candidatures_count = serializers.SerializerMethodField()
 
@@ -34,10 +33,9 @@ class OffreSerializer(serializers.ModelSerializer):
 
 # Serialiseur pour creer une offre
 class OffreCreateSerializer(serializers.ModelSerializer):
-    competences = serializers.PrimaryKeyRelatedField(
-        queryset=Competence.objects.all(),
-        many=True,
-        required=False
+    competences = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
     )
 
     class Meta:
@@ -55,11 +53,26 @@ class OffreCreateSerializer(serializers.ModelSerializer):
 
 # Serialiseur simple pour la liste
 class OffreListSerializer(serializers.ModelSerializer):
-    competences = serializers.SerializerMethodField()
+    competences = serializers.ListField(child=serializers.CharField(), read_only=True)
+    candidatures_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Offre
-        fields = ['id', 'titre', 'type_contrat', 'statut', 'created_at']
+        fields = [
+            'id',
+            'titre',
+            'description',
+            'experience_requise',
+            'competences',
+            'type_contrat',
+            'salaire_min',
+            'salaire_max',
+            'statut',
+            'date_publication',
+            'date_cloture',
+            'created_at',
+            'candidatures_count',
+        ]
 
-    def get_competences(self, obj):
-        return [c.nom for c in obj.competences.all()]
+    def get_candidatures_count(self, obj):
+        return obj.get_candidatures_count()

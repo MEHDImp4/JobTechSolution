@@ -7,7 +7,7 @@ from apps.offres.viewsets import OffreViewSet, CompetenceViewSet
 from apps.candidatures.viewsets import CandidatureViewSet
 from apps.entretiens.viewsets import EntretienViewSet
 from apps.evaluations.viewsets import EvaluationViewSet
-from apps.statistiques.viewsets import KPIViewSet
+from apps.statistiques.viewsets import KPIViewSet, dashboard_stats
 
 # Auth router
 auth_router = DefaultRouter()
@@ -38,5 +38,6 @@ router.register(r'kpi', KPIViewSet, basename='kpi')
 
 urlpatterns = [
     path('auth/', include(auth_router.urls)),
+    path('statistiques/rh/', dashboard_stats, name='statistiques-rh'),
     path('', include(router.urls)),
 ]

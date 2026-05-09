@@ -1,12 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { Bell, BellOff, Loader2 } from 'lucide-react';
-import { subscribeUserToPush, unsubscribeUserFromPush, getPushSubscription } from '../../lib/pushNotifications';
+import {
+  subscribeUserToPush,
+  unsubscribeUserFromPush,
+  getPushSubscription,
+  isPushNotificationsConfigured,
+} from '../../lib/pushNotifications';
 import { toast } from 'react-hot-toast';
 
 const PushSubscriptionManager: React.FC = () => {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const pushConfigured = isPushNotificationsConfigured();
 
   useEffect(() => {
     async function checkSubscription() {
@@ -58,7 +64,9 @@ const PushSubscriptionManager: React.FC = () => {
             Notifications Push
           </h3>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            {isSubscribed 
+            {!pushConfigured
+              ? 'Notifications indisponibles: clé VAPID publique non configurée.'
+              : isSubscribed 
               ? 'Vous recevrez des alertes pour vos entretiens et messages.' 
               : 'Activez les notifications pour rester informé en temps réel.'}
           </p>
@@ -66,12 +74,12 @@ const PushSubscriptionManager: React.FC = () => {
       </div>
       <button
         onClick={handleToggleSubscription}
-        disabled={actionLoading}
+        disabled={actionLoading || !pushConfigured}
         className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
           isSubscribed
             ? 'bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200'
             : 'bg-blue-600 hover:bg-blue-700 text-white'
-        } disabled:opacity-50`}
+        } disabled:opacity-50 disabled:cursor-not-allowed`}
       >
         {actionLoading ? (
           <Loader2 className="animate-spin h-4 w-4" />

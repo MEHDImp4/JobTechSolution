@@ -1,17 +1,20 @@
 # ViewSet pour les candidatures
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+
+from jobtech.pagination import StandardResultsSetPagination
 
 from .models import Candidature
 from .serializers import CandidatureCreateSerializer, CandidatureListSerializer, CandidatureSerializer
 
 
 class CandidatureViewSet(viewsets.ModelViewSet):
-    queryset = Candidature.objects.all()
+    queryset = Candidature.objects.select_related('offre', 'candidat')
     serializer_class = CandidatureSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -35,7 +38,7 @@ class CandidatureViewSet(viewsets.ModelViewSet):
         if statut:
             qs = qs.filter(statut=statut)
 
-        return qs.order_by('-date_soumission')
+        return qs.order_by('-date_postulation')
 
     def is_rh(self):
         return (
@@ -57,6 +60,54 @@ class CandidatureViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save(candidat=request.user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['get'], url_path=r'offre/(?P<offre_id>\d+)')
+    def offre(self, request, offre_id=None):
+        queryset = self.get_queryset().filter(offre_id=offre_id)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = CandidatureListSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = CandidatureListSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='my-applications')
+    def my_applications(self, request):
+        queryset = self.get_queryset().filter(candidat=request.user)
+        serializer = CandidatureListSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['get'], url_path='status')
+    def status(self, request, pk=None):
+        candidature = self.get_object()
+        return Response(
+            {
+                'ia_status': candidature.ia_status,
+                'score_ia': candidature.score_ia,
+                'statut': candidature.statut,
+            }
+        )
+
+    @action(detail=True, methods=['post'], url_path='statut')
+    def statut(self, request, pk=None):
+        candidature = self.get_object()
+        if not self.is_rh():
+            return Response({'message': 'Interdit'}, status=403)
+
+        new_statut = request.data.get('statut')
+        valid_statuts = {choice[0] for choice in Candidature.STATUTS}
+        if new_statut not in valid_statuts:
+            return Response({'message': 'Statut invalide'}, status=400)
+
+        candidature.statut = new_statut
+        candidature.save(update_fields=['statut'])
+        return Response(
+            {
+                'ia_status': candidature.ia_status,
+                'score_ia': candidature.score_ia,
+                'statut': candidature.statut,
+            }
+        )
 
     # Mise a jour groupée du statut (RH only)
     @action(detail=False, methods=['post'])

@@ -43,8 +43,14 @@ Le systeme de gestion des utilisateurs permet de creer, authentifier et administ
 #### Authentification
 1. L'utilisateur saisit email et mot de passe
 2. Le systeme verifie les identifiants
-3. Un token JWT est genere pour la session
-4. Le token est stocke cote frontend pour les requetes suivantes
+3. Une session authentifiee est ouverte cote backend
+4. Le frontend envoie les cookies de session avec `credentials: 'include'` et ajoute le header `X-CSRFToken` pour les mutations
+5. La deconnexion applicative se fait via `DELETE /api/auth/`
+
+#### Comportement API actuel
+- Le login accepte l'email ou le username selon les donnees fournies
+- Un message explicite est renvoye si le compte existe mais n'est pas encore actif
+- Le frontend n'utilise pas de JWT pour la session courante
 
 #### Protection RBAC
 Chaque vue verifie le role de l'utilisateur avant d'autoriser l'acces:
@@ -134,6 +140,21 @@ Interface visuelle avec des colonnes pour chaque statut:
 - Glisser-deposer pour changer le statut
 - Affichage des informations du candidat
 - Score IA visible
+
+#### Endpoints utilises par le frontend
+- `GET /api/candidatures/offre/<offre_id>/` pour charger les candidatures d'une offre cote RH
+- `GET /api/candidatures/my-applications/` pour lister les candidatures du candidat connecte
+- `GET /api/candidatures/<id>/status/` pour recuperer rapidement l'etat d'une candidature
+- `POST /api/candidatures/<id>/statut/` pour mettre a jour le statut d'une candidature
+
+#### Contrat de donnees principal
+Les listes de candidatures exposees au frontend renvoient notamment:
+- `offre_id`, `offre_titre`
+- `candidat_nom`, `candidat_email`
+- `cv_file_original_name`
+- `experience_annees`, `linkedin_url`
+- `ia_status`, `score_ia`
+- `date_candidature`, `date_maj`
 
 ### Fichiers concernes
 
@@ -321,6 +342,17 @@ Export des donnees pour analyse externe
 #### Snapshots mensuels
 Enregistrement automatique des KPIs chaque mois pour suivi historique
 
+#### Endpoints actuellement exploites
+- `GET /api/statistiques/rh/` alimente le tableau de bord RH avec les compteurs de synthese
+- `GET /api/kpi/` renvoie directement un objet KPI calcule avec:
+  - `funnel`
+  - `delai_moyen`
+  - `score_stats`
+  - `top_competences`
+
+#### Robustesse frontend
+La page `StatistiquesPage.tsx` utilise un etat vide par defaut pour eviter tout crash si l'API renvoie temporairement des donnees absentes ou partielles.
+
 ### Fichiers concernes
 
 | Fonction | Fichiers |
@@ -396,7 +428,7 @@ Envoie des emails automatises aux utilisateurs pour les informer des evenements 
 ## 10. Journal d'Audit
 
 ### Description
-Enregistre toutes les actions effectuees sur le systeme pour la traçabilite.
+Enregistre toutes les actions effectuees sur le systeme pour la tracabilite.
 
 ### Fonctionnalites
 
@@ -412,6 +444,19 @@ Enregistre toutes les actions effectuees sur le systeme pour la traçabilite.
 - Donnees avant et apres modification
 - Adresse IP
 - Date et heure
+
+#### Contrat API expose au frontend
+L'endpoint `GET /api/audit/` utilise un serializer dedie et renvoie notamment:
+- `user_email`
+- `action`
+- `model_name`
+- `object_id`
+- `ip_address`
+- `user_agent`
+- `timestamp`
+- `endpoint`
+
+Cette structure est celle attendue par `AuditLogPage.tsx`.
 
 ### Fichiers concernes
 
@@ -451,6 +496,12 @@ Interface Django admin pour la gestion des donnees par les administrateurs.
 
 ### Description
 Interface utilisateur web developed avec React et TypeScript.
+
+### Communication API
+- Le client HTTP frontend est base sur `ky`
+- Toutes les requetes passent par le helper `client.ts`
+- Les cookies de session sont envoyes automatiquement
+- Les requetes `POST`, `PUT`, `PATCH` et `DELETE` ajoutent automatiquement `X-CSRFToken`
 
 ### Pages et Fonctionnalites
 
@@ -506,6 +557,11 @@ Interface utilisateur web developed avec React et TypeScript.
 | Statistiques | `services/statistiques.service.ts` | Donnees statistiques |
 | Admin | `services/admin.service.ts` | Administration |
 
+### Notifications push (PWA)
+- L'abonnement push necessite une vraie cle publique VAPID dans `VITE_VAPID_PUBLIC_KEY`
+- Si cette cle est absente ou invalide, l'interface desactive proprement l'abonnement aux notifications push
+- Cette protection evite l'erreur navigateur `InvalidAccessError` lors de `pushManager.subscribe()`
+
 ### Gestion d'etat
 
 | Store | Fichier | Description |
@@ -543,7 +599,7 @@ Interface utilisateur web developed avec React et TypeScript.
 - **TypeScript** - Typage statique
 - **Vite** - Build tool
 - **Zustand** - Gestion d'etat
-- **Axios** - Client HTTP
+- **ky** - Client HTTP
 - **Playwright** - Tests e2e
 
 ### Infrastructure
