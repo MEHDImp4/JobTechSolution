@@ -582,6 +582,467 @@ Interface utilisateur web developed avec React et TypeScript.
 
 ---
 
+## 13. API Backend - Méthodes et Fonctions
+
+### Module Accounts (Authentification et Utilisateurs)
+
+#### Classe User
+`app/backend/apps/accounts/models.py`
+
+| Méthode | Signature | Description |
+|---------|-----------|-------------|
+| `get_full_name` | `get_full_name(self)` | Propriété retournant le nom complet au format "Nom Prénom" |
+| `get_short_name()` | `get_short_name(self)` | Retourne le prénom de l'utilisateur |
+| `is_admin` | `is_admin(self)` | Propriété booléenne : vérifie si l'utilisateur a les droits admin |
+| `is_rh` | `is_rh(self)` | Propriété booléenne : vérifie si l'utilisateur a les droits RH |
+| `is_recruteur` | `is_recruteur(self)` | Propriété booléenne : vérifie si l'utilisateur a les droits recruteur |
+| `is_candidat` | `is_candidat(self)` | Propriété booléenne : vérifie si l'utilisateur est candidat |
+| `__str__()` | `__str__(self)` | Retourne une représentation textuelle : "Nom Prénom <email>" |
+
+#### Classe AuditLog
+`app/backend/apps/accounts/models.py`
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `user` | ForeignKey | Référence à l'utilisateur ayant effectué l'action (nullable) |
+| `action` | CharField | Type d'action : CREATE, UPDATE, DELETE, VIEW |
+| `model_name` | CharField | Nom du modèle affecté (ex: "Candidature", "Offre") |
+| `object_id` | IntegerField | ID de l'objet concerné |
+| `data_before` | JSONField | Données avant modification |
+| `data_after` | JSONField | Données après modification |
+| `ip_address` | GenericIPAddressField | Adresse IP de l'utilisateur |
+| `user_agent` | CharField | User-Agent du navigateur |
+| `timestamp` | DateTimeField | Horodatage de l'action |
+| `endpoint` | CharField | Endpoint API utilisé |
+
+#### ViewSet AuthViewSet
+`app/backend/apps/accounts/viewsets.py`
+
+| Action | Endpoint | Méthode HTTP | Description |
+|--------|----------|--------------|-------------|
+| `list()` | `/auth/` | GET | Retourne l'utilisateur connecté |
+| `me` | `/auth/me/` | GET | Alias pour retourner l'utilisateur connecté |
+| `create()` | `/auth/` | POST | Authentifie l'utilisateur (login) |
+| `login()` | `/auth/login/` | POST | Authentification par email/password |
+| `destroy()` | `/auth/` | DELETE | Déconnecte l'utilisateur (logout) |
+
+#### View UserListView
+`app/backend/apps/accounts/views.py`
+
+| Propriété | Valeur | Description |
+|-----------|--------|-------------|
+| `get_queryset()` | Filtre les utilisateurs | Retourne tous les utilisateurs, filtrables par rôle, statut (actif/inactif), et recherche textuelle |
+| `get_context_data()` | Contexte template | Ajoute les rôles disponibles au contexte |
+| Pagination | 25 par page | Affiche 25 utilisateurs par page |
+
+#### View UserToggleActiveView
+`app/backend/apps/accounts/views.py` - AJAX POST
+- Bascule le statut `is_active` d'un utilisateur
+- Invalide toutes les sessions de l'utilisateur s'il est désactivé
+- Retourne JSON avec le nouveau statut
+
+#### View UserRoleChangeView
+`app/backend/apps/accounts/views.py` - AJAX POST
+- Change le rôle d'un utilisateur
+- Valide que le nouveau rôle existe
+- Enregistre l'action dans AuditLog
+
+#### Décorateurs et Mixins
+`app/backend/apps/accounts/decorators.py` et `app/backend/apps/accounts/mixins.py`
+
+| Nom | Type | Roles autorisés | Description |
+|-----|------|-----------------|-------------|
+| `@role_required(*roles)` | Décorateur | Variable | Restreint l'accès selon les rôles |
+| `@admin_required` | Décorateur | admin | Réserve aux administrateurs |
+| `@rh_required` | Décorateur | rh, admin | Réserve aux RH et admins |
+| `AdminRequiredMixin` | Mixin | admin | Classe de base pour les vues réservées à l'admin |
+| `RHOrAdminMixin` | Mixin | rh, admin | Pour les vues RH et admin |
+| `RecruteurMixin` | Mixin | recruteur, rh, admin | Pour les vues recruteur |
+| `CandidatMixin` | Mixin | candidat | Pour les vues candidat |
+
+---
+
+### Module Candidatures (Postulations)
+
+#### ViewSet CandidatureViewSet
+`app/backend/apps/candidatures/viewsets.py`
+
+| Action | Endpoint | Méthode | Description |
+|--------|----------|---------|-------------|
+| `list()` | `/candidatures/` | GET | Liste les candidatures (filtrées selon le rôle) |
+| `create()` | `/candidatures/` | POST | Crée une nouvelle candidature (postulation) |
+| `offre()` | `/candidatures/offre/{id}/` | GET | Retourne les candidatures d'une offre |
+| `my_applications()` | `/candidatures/my-applications/` | GET | Retourne les candidatures du candidat connecté |
+| `status()` | `/candidatures/{id}/status/` | GET | Retourne rapidement le statut IA et général d'une candidature |
+| `statut()` | `/candidatures/{id}/statut/` | POST | Met à jour le statut d'une candidature (RH only) |
+
+**Logiques importantes:**
+- Les candidats ne voient que leurs propres candidatures
+- Vérification anti-doublon : impossible de postuler deux fois à la même offre
+- Filtrage par offre et statut en querystring
+- Validation du nouveau statut lors de la mise à jour
+
+---
+
+### Module Offres (Job Listings)
+
+#### ViewSet OffreViewSet
+`app/backend/apps/offres/viewsets.py`
+
+| Action | Endpoint | Méthode | Description |
+|--------|----------|---------|-------------|
+| `list()` | `/offres/` | GET | Liste les offres (publiées pour candidats, toutes pour RH) |
+| `create()` | `/offres/` | POST | Crée une nouvelle offre (RH only) |
+| `autocomplete()` | `/offres/autocomplete/` | GET | Autocomplétion pour les compétences |
+
+**Filtres querystring:**
+- `q` : Recherche texte sur titre et description
+- `type_contrat` : CDI, CDD, Stage, Freelance
+- `statut` : brouillon, publiee, fermee
+
+#### ViewSet CompetenceViewSet
+`app/backend/apps/offres/viewsets.py`
+
+| Action | Endpoint | Méthode | Description |
+|--------|----------|---------|-------------|
+| `list()` | `/competences/` | GET | Liste toutes les compétences (publique) |
+| `create()` | `/competences/` | POST | Crée une compétence |
+
+---
+
+### Module Entretiens (Interviews)
+
+#### ViewSet EntretienViewSet
+`app/backend/apps/entretiens/viewsets.py`
+
+| Action | Endpoint | Méthode | Description |
+|--------|----------|---------|-------------|
+| `list()` | `/entretiens/` | GET | Liste les entretiens (filtrés par rôle) |
+| `create()` | `/entretiens/` | POST | Crée un nouvel entretien |
+| `notes()` | `/entretiens/{id}/notes/` | PATCH/POST | Enregistre les notes d'un entretien |
+| `statut()` | `/entretiens/{id}/statut/` | PATCH/POST | Modifie le statut (planifie, en_cours, termine, annule) |
+
+**Statuts disponibles:**
+- `planifie` : Entretien programmé
+- `en_cours` : En déroulement
+- `termine` : Terminé
+- `annule` : Annulé
+
+---
+
+### Module Évaluations
+
+#### ViewSet EvaluationViewSet
+`app/backend/apps/evaluations/viewsets.py`
+
+| Action | Endpoint | Méthode | Description |
+|--------|----------|---------|-------------|
+| `list()` | `/evaluations/` | GET | Liste les évaluations (filtrées par rôle) |
+| `create()` | `/evaluations/` | POST | Crée une nouvelle évaluation |
+| `submit()` | `/evaluations/{id}/submit/` | POST | Soumet l'évaluation (statut = 'soumis') |
+| `pdf()` | `/evaluations/{id}/pdf/` | GET | Retourne l'URL du PDF d'évaluation |
+
+**Critères d'évaluation:**
+- `competences_rate` (1-5) : Compétences techniques
+- `communication_rate` (1-5) : Communication
+- `motivation_rate` (1-5) : Motivation
+- `adaptabilite_rate` (1-5) : Adaptabilité
+- `culture_fit_rate` (1-5) : Adéquation culturelle
+- `moyenne_score` : Calculée automatiquement
+
+---
+
+### Module Statistiques (KPI & Dashboard)
+
+#### Classe RHKPICalculator
+`app/backend/apps/statistiques/kpi_calculator.py`
+
+| Méthode | Paramètres | Retour | Description |
+|---------|-----------|--------|-------------|
+| `__init__()` | `date_debut`, `date_fin` (optionnels) | None | Initialise avec filtrage optionnel par date |
+| `get_funnel()` | Aucun | dict | Retourne l'entonnoir : total, préséléctionnés, entretiens, retenus, taux |
+| `get_delai_moyen()` | Aucun | float | Délai moyen (jours) entre postulation et évaluation soumise |
+| `get_score_stats()` | Aucun | dict | Statistiques des scores IA : average, max, min |
+| `get_top_competences()` | `n=8` (int) | list | Top N compétences les plus demandées |
+| `get_dashboard_stats()` | Aucun | dict | Synthèse pour le dashboard : total_offres, total_candidatures, total_entretiens, recrutements_reussis, top_candidats |
+| `get_all()` | Aucun | dict | Agrège toutes les métriques |
+
+#### ViewSet KPIViewSet
+`app/backend/apps/statistiques/viewsets.py`
+
+| Action | Endpoint | Méthode | Description |
+|--------|----------|---------|-------------|
+| `list()` | `/kpi/` | GET | Retourne les KPIs complets (via RHKPICalculator) |
+
+#### Fonction dashboard_stats
+`app/backend/apps/statistiques/viewsets.py` - Décorée avec `@api_view(['GET'])`
+
+- Endpoint : `/statistiques/rh/`
+- Retourne les statistiques du dashboard RH
+- Sérialisée via `DashboardStatsSerializer`
+
+---
+
+### Module IA (Intelligence Artificielle)
+
+#### Classe CVTextExtractor
+`app/backend/apps/ia/extractors.py`
+
+| Méthode | Paramètres | Retour | Description |
+|---------|-----------|--------|-------------|
+| `extract()` | `file_path` (str) | str | Extraction de texte (point d'entrée) - détermine le format |
+| `_extract_pdf()` | `path` (Path) | str | Extraction PDF standard via PyPDF2 |
+| `_extract_pdf_ocr()` | `path` (Path) | str | Extraction PDF par OCR (pour scans) via Tesseract |
+| `_extract_docx()` | `path` (Path) | str | Extraction DOCX via python-docx |
+| `_clean_text()` | `text` (str) | str | Normalisation du texte (espaces, retours à la ligne) |
+
+**Formats supportés:** `.pdf`, `.docx`, `.doc`
+
+#### Fonctions du Service IA
+`app/backend/apps/ia/service.py`
+
+| Fonction | Paramètres | Retour | Description |
+|----------|-----------|--------|-------------|
+| `extract_cv_text()` | `file_path` | str | Extrait le texte brut du CV |
+| `extract_competences()` | `texte`, `offre_skills` | list | Extrait les compétences du CV comparées à l'offre |
+| `extract_experience()` | `texte` | int | Extrait le nombre d'années d'expérience |
+| `normalize_competences()` | `competences` | list | Normalise les compétences via LLM |
+| `compute_score()` | `cv_data`, `offre` | float | Calcule le score de compatibilité (0-100%) |
+| `generate_summary()` | `texte` | str | Génère un résumé du CV via LLM |
+
+---
+
+### Module Rapports PDF
+
+#### Classe EvaluationPDFGenerator
+`app/backend/apps/rapports/pdf_generator.py`
+
+| Méthode | Paramètres | Retour | Description |
+|---------|-----------|--------|-------------|
+| `generate()` | `evaluation` (Evaluation) | BytesIO | Génère le PDF d'évaluation complet avec notes et graphique |
+
+**Contenu du PDF:**
+- Titre et informations du candidat
+- Offre et date d'entretien
+- Tableau des notes par critère
+- Graphique radar (scores visuels)
+- Recommandation colorée (retenu/reconsidérer/refusé)
+- Commentaires du recruteur
+
+---
+
+### Module Notifications
+
+#### Tâches Celery
+`app/backend/apps/notifications/tasks.py`
+
+| Tâche | Paramètres | Description |
+|-------|-----------|-------------|
+| `send_activation_email()` | `user_id`, `activation_link` | Envoie le lien d'activation |
+| `send_application_notification()` | `candidature_id` | Notifie le recruteur d'une nouvelle candidature |
+| `send_interview_invitation()` | `entretien_id` | Invite le candidat à un entretien |
+| `send_final_decision()` | `candidature_id`, `decision` | Communique la décision finale au candidat |
+
+---
+
+## 14. Frontend Services - Méthodes et Fonctions
+
+### Service Auth
+`app/frontend/src/services/auth.service.ts`
+
+| Fonction | Paramètres | Retour | Description |
+|----------|-----------|--------|-------------|
+| `login()` | `email`, `password` | Promise | Authentifie l'utilisateur |
+| `register()` | `data` (UserCreateData) | Promise | Crée un nouveau compte utilisateur |
+| `logout()` | Aucun | Promise | Déconnecte l'utilisateur |
+| `getCurrentUser()` | Aucun | Promise | Récupère l'utilisateur connecté |
+| `updateProfile()` | `data` (ProfileUpdateData) | Promise | Met à jour le profil utilisateur |
+| `changePassword()` | `oldPassword`, `newPassword` | Promise | Change le mot de passe |
+
+---
+
+### Service Offres
+`app/frontend/src/services/offres.service.ts`
+
+| Fonction | Paramètres | Retour | Description |
+|----------|-----------|--------|-------------|
+| `listOffres()` | `filters?` (OffreFilters) | Promise | Liste les offres avec filtres optionnels |
+| `getOffre()` | `id` (number) | Promise | Récupère une offre par ID |
+| `createOffre()` | `data` (OffreCreateData) | Promise | Crée une nouvelle offre (RH) |
+| `updateOffre()` | `id`, `data` | Promise | Met à jour une offre (RH) |
+| `deleteOffre()` | `id` (number) | Promise | Supprime une offre (RH) |
+| `autocompleteSkills()` | `query` (string) | Promise | Autocomplétion pour les compétences |
+
+---
+
+### Service Candidatures
+`app/frontend/src/services/candidatures.service.ts`
+
+| Fonction | Paramètres | Retour | Description |
+|----------|-----------|--------|-------------|
+| `listCandidatures()` | `offreId?` (number) | Promise | Liste les candidatures d'une offre |
+| `getCandidature()` | `id` (number) | Promise | Récupère une candidature par ID |
+| `createCandidature()` | `data` (CandidatureCreateData) | Promise | Crée une nouvelle candidature (postulation) |
+| `updateStatus()` | `id`, `newStatus` | Promise | Met à jour le statut d'une candidature (RH) |
+| `getMyApplications()` | Aucun | Promise | Récupère les candidatures de l'utilisateur connecté |
+| `getStatus()` | `id` (number) | Promise | Récupère rapidement le statut IA et général |
+
+---
+
+### Service Entretiens
+`app/frontend/src/services/entretiens.service.ts`
+
+| Fonction | Paramètres | Retour | Description |
+|----------|-----------|--------|-------------|
+| `listEntretiens()` | Aucun | Promise | Liste les entretiens de l'utilisateur |
+| `getEntretien()` | `id` (number) | Promise | Récupère un entretien par ID |
+| `createEntretien()` | `data` (EntretienCreateData) | Promise | Crée un nouvel entretien (planification) |
+| `updateNotes()` | `id`, `notes` | Promise | Enregistre les notes d'un entretien |
+| `updateStatus()` | `id`, `status` | Promise | Change le statut d'un entretien |
+
+---
+
+### Service Évaluations
+`app/frontend/src/services/evaluations.service.ts`
+
+| Fonction | Paramètres | Retour | Description |
+|----------|-----------|--------|-------------|
+| `listEvaluations()` | Aucun | Promise | Liste les évaluations |
+| `getEvaluation()` | `id` (number) | Promise | Récupère une évaluation par ID |
+| `createEvaluation()` | `data` (EvaluationCreateData) | Promise | Crée une nouvelle évaluation |
+| `submitEvaluation()` | `id` (number) | Promise | Soumet l'évaluation (finalise) |
+| `getPDF()` | `id` (number) | Promise | Récupère le PDF d'évaluation |
+
+---
+
+### Service Statistiques
+`app/frontend/src/services/statistiques.service.ts`
+
+| Fonction | Paramètres | Retour | Description |
+|----------|-----------|--------|-------------|
+| `getDashboardStats()` | Aucun | Promise | Récupère les statistiques du dashboard RH |
+| `getKPIs()` | Aucun | Promise | Récupère les KPIs complets |
+| `exportCSV()` | Aucun | Promise | Exporte les données en CSV |
+
+---
+
+### Service Admin
+`app/frontend/src/services/admin.service.ts`
+
+| Fonction | Paramètres | Retour | Description |
+|----------|-----------|--------|-------------|
+| `listUsers()` | `filters?` | Promise | Liste les utilisateurs (admin only) |
+| `updateUserRole()` | `userId`, `newRole` | Promise | Change le rôle d'un utilisateur (admin only) |
+| `toggleUserStatus()` | `userId` | Promise | Bascule le statut actif/inactif d'un utilisateur |
+| `getAuditLogs()` | `filters?` | Promise | Récupère les journaux d'audit (admin only) |
+
+---
+
+## 15. Frontend Composants - Méthodes Principales
+
+### Composant KanbanBoard
+`app/frontend/src/components/rh/KanbanBoard.tsx`
+
+| Méthode | Description |
+|---------|-------------|
+| `handleDragStart()` | Initialise le drag-and-drop d'une candidature |
+| `handleDragOver()` | Gère l'espace de drop |
+| `handleDrop()` | Finalise le drop et met à jour le statut |
+| `getStatusColor()` | Retourne la couleur associée au statut |
+| `groupByStatus()` | Groupe les candidatures par statut |
+
+### Composant CreateEvaluationModal
+`app/frontend/src/components/rh/CreateEvaluationModal.tsx`
+
+| Méthode | Description |
+|---------|-------------|
+| `calculateAverage()` | Calcule la note moyenne des 5 critères |
+| `handleSubmit()` | Valide et soumet l'évaluation |
+| `generatePDF()` | Génère et télécharge le PDF |
+
+### Composant PlanifierEntretienModal
+`app/frontend/src/components/rh/PlanifierEntretienModal.tsx`
+
+| Méthode | Description |
+|---------|-------------|
+| `checkConflicts()` | Détecte les conflits d'horaire |
+| `generateMeetingLink()` | Génère un lien Jitsi pour la vidéo |
+| `handleSubmit()` | Crée l'entretien et envoie l'invitation |
+
+### Composant CandidatureIAModal
+`app/frontend/src/components/rh/CandidatureIAModal.tsx`
+
+| Méthode | Description |
+|---------|-------------|
+| `displayScore()` | Affiche le score IA avec barre de progression |
+| `showMatchingSkills()` | Liste les compétences correspondantes |
+| `showMissingSkills()` | Liste les compétences manquantes |
+| `displaySummary()` | Affiche le résumé généré par l'IA |
+
+---
+
+## 16. Stores (Gestion d'état)
+
+### AuthStore
+`app/frontend/src/stores/authStore.ts`
+
+| État | Type | Description |
+|------|------|-------------|
+| `user` | User \| null | Utilisateur actuellement connecté |
+| `isLoading` | boolean | État de chargement |
+| `setUser()` | (user: User) => void | Définit l'utilisateur connecté |
+| `logout()` | () => void | Réinitialise l'utilisateur |
+
+### UIStore
+`app/frontend/src/stores/uiStore.ts`
+
+| État | Type | Description |
+|------|------|-------------|
+| `isDarkMode` | boolean | Thème clair/sombre |
+| `sidebarOpen` | boolean | État de la sidebar |
+| `toggleTheme()` | () => void | Bascule le thème |
+| `toggleSidebar()` | () => void | Bascule la sidebar |
+
+---
+
+## 17. Hooks React Personnalisés
+
+### useAuth
+`app/frontend/src/hooks/useAuth.ts`
+
+```typescript
+function useAuth(): {
+  user: User | null
+  loading: boolean
+  login: (email: string, password: string) => Promise<void>
+  logout: () => Promise<void>
+}
+```
+
+### useCandidatures
+`app/frontend/src/hooks/useCandidatures.ts`
+
+```typescript
+function useCandidatures(offreId?: number): {
+  candidatures: Candidature[]
+  loading: boolean
+  error: Error | null
+  refetch: () => Promise<void>
+}
+```
+
+### useKanbanBoard
+`app/frontend/src/hooks/useKanbanBoard.ts`
+
+```typescript
+function useKanbanBoard(): {
+  groupedCandidatures: Record<string, Candidature[]>
+  updateStatus: (candidatureId: number, newStatus: string) => Promise<void>
+}
+```
+
+---
+
 ## Resume des technologies utilisees
 
 ### Backend
