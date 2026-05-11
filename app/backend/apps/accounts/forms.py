@@ -1,8 +1,3 @@
-"""
-Registration form for candidate self-registration.
-Validates email uniqueness, password strength, and required fields.
-"""
-
 import re
 
 from django import forms
@@ -10,19 +5,12 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 
 User = get_user_model()
-
-# Password strength regex patterns
 _RE_UPPERCASE = re.compile(r'[A-Z]')
 _RE_DIGIT = re.compile(r'\d')
 _RE_SPECIAL = re.compile(r'[!@#$%^&*(),.?":{}|<>\-_+=\[\]\\;\'`~/]')
 
 
 class RegisterForm(forms.Form):
-    """
-    Candidate self-registration form.
-    Creates an inactive user with role='candidat'; activation via email link.
-    """
-
     email = forms.EmailField(
         label='Adresse e-mail',
         max_length=254,
@@ -123,10 +111,6 @@ class RegisterForm(forms.Form):
         return cleaned_data
 
     def save(self):
-        """
-        Create and return an inactive User with role='candidat'.
-        Caller is responsible for sending the activation email.
-        """
         email = self.cleaned_data['email']
         nom = self.cleaned_data['nom']
         prenom = self.cleaned_data['prenom']
@@ -138,5 +122,4 @@ class RegisterForm(forms.Form):
             prenom=prenom,
             password=password,
         )
-        # create_user sets is_active=False by default (CustomUserManager)
         return user

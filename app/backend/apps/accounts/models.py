@@ -6,8 +6,6 @@ from .managers import CustomUserManager
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    """Modèle utilisateur personnalisé avec rôles."""
-
     ROLES = [
         ('admin', 'Administrateur'),
         ('rh', 'Responsable RH'),
