@@ -139,7 +139,7 @@ npm run dev
 
 L'application peut egalement etre lancee avec Docker Compose:
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 Cela demarre automatiquement tous les services necessaires (backend, frontend, PostgreSQL, Redis).

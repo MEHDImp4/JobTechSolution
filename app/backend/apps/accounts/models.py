@@ -40,17 +40,17 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def is_admin(self):
         """Vérifie si l'utilisateur est admin."""
-        return self.role == 'admin' or self.is_superuser
+        return self.role == 'admin'
 
     @property
     def is_rh(self):
         """Vérifie si l'utilisateur a des droits RH."""
-        return self.role in ['admin', 'rh'] or self.is_superuser
+        return self.role in ['admin', 'rh'] 
 
     @property
     def is_recruteur(self):
         """Vérifie si l'utilisateur a des droits Recruteur."""
-        return self.role in ['admin', 'rh', 'recruteur'] or self.is_superuser
+        return self.role in ['admin', 'rh', 'recruteur'] 
 
     @property
     def is_candidat(self):

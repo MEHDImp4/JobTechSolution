@@ -1696,7 +1696,7 @@ celery -A jobtech beat -l info
 ### Option Docker
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 ### Conseils simples

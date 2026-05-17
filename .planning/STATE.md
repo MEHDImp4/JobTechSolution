@@ -6,6 +6,7 @@
 - [x] Mise en place de la structure de planning (.planning/)
 - [x] Suppression de la vérification par e-mail (Comptes actifs par défaut)
 - [x] Correction du crash `crypto.randomUUID` dans le composant Toast
+- [x] Réparation des workflows CI/CD (`docker-compose` et chemins d'accès)
 
 ## Historique récent
 - Modification de `models.py` : `is_active` et `is_email_verified` passent à `True` par défaut.

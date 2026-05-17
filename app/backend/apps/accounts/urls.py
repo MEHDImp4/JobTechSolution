@@ -37,14 +37,6 @@ urlpatterns = [
         ActivateAccountView.as_view(),
         name='activate',
     ),
-    # Registration
-    path('register/', RegisterView.as_view(), name='register'),
-    path('register/success/', RegisterSuccessView.as_view(), name='register_success'),
-    path(
-        'activate/<uidb64>/<token>/',
-        ActivateAccountView.as_view(),
-        name='activate',
-    ),
     # Authentication
     path('login/', CustomLoginView.as_view(), name='login'),
     path('logout/', CustomLogoutView.as_view(), name='logout'),
