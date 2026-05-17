@@ -68,7 +68,7 @@ Le frontend est une application SPA (Single Page Application) developpee avec:
 - Scoring des candidats base sur la compatibilite avec l'offre
 - Generations de questions d'entretien par IA
 - Notifications par email automatisees
-- Salle video pour les entretiens a distance (integration Jitsi)
+- Suivi simple des entretiens et des evaluations
 - Application mobile (PWA)
 
 ## Installation et Configuration

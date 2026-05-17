@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { Calendar, Clock, MapPin, Video } from 'lucide-react'
+import { Calendar, Clock, MapPin } from 'lucide-react'
 import { StatusBadge } from '@/components/ui/Badge'
 import { toast } from '@/components/feedback/Toast'
 import { LoadingState, ErrorState, EmptyState } from '@/components/feedback/States'
@@ -116,17 +115,6 @@ export default function EntretiensPage() {
                           {e.lieu}
                         </span>
                       )}
-                      {['planifie', 'en_cours'].includes(e.statut) && (
-                        <Link
-                          to={`/visio/${e.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 text-brand-600 dark:text-brand-400 font-semibold hover:underline"
-                        >
-                          <Video className="h-4 w-4" />
-                          Rejoindre la visio
-                        </Link>
-                      )}
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-3 shrink-0">
@@ -148,16 +136,6 @@ export default function EntretiensPage() {
                     </div>
                     
                     <div className="flex items-center gap-2">
-                      {['planifie', 'en_cours'].includes(e.statut) && (
-                        <Link
-                          to={`/visio/${e.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-600 text-white shadow-glow-blue hover:bg-brand-700 transition-colors"
-                        >
-                          Rejoindre Visio
-                        </Link>
-                      )}
                       {user && ['rh', 'admin', 'recruteur'].includes(user.role) && (
                         <>
                           <button

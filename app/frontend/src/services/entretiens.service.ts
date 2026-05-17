@@ -13,11 +13,4 @@ export const entretiensService = {
 
   updateNotes: (id: number, notes: string) =>
     apiPatch<Entretien>(`entretiens/${id}/notes`, { notes }),
-
-  getRoomAccess: (id: number) =>
-    apiGet<{
-      room_name: string;
-      jitsi_domain: string;
-      external_url?: string;
-    }>(`entretiens/${id}/room`),
 }

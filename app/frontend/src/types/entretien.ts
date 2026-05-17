@@ -8,7 +8,6 @@ export interface Entretien {
   duree_minutes: number
   type_entretien: 'recrutement' | 'annuel' | 'technique' | 'final'
   lieu: string
-  lien_visio: string
   statut: 'planifie' | 'en_cours' | 'termine' | 'annule'
   notes: string
   score_ia?: number
@@ -23,5 +22,4 @@ export interface EntretienCreatePayload {
   duree_minutes?: number
   type_entretien?: string
   lieu?: string
-  lien_visio?: string
 }
