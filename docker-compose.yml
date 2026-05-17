@@ -35,6 +35,7 @@ services:
       context: ./app/backend
       dockerfile: Dockerfile
     container_name: jobtech_backend
+    command: ["sh", "/app/entrypoint.sh"]
     volumes:
       - ./app/backend:/app
     ports:
