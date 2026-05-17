@@ -1,95 +1,20 @@
-# Serialiseurs pour les offres d'emploi
 from rest_framework import serializers
 
-from .models import Competence, Offre
+from .models import Offre
 
 
-# Serialiseur pour les competences
-class CompetenceSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Competence
-        fields = ['id', 'nom', 'categorie']
-
-
-# Serialiseur pour une offre complete
 class OffreSerializer(serializers.ModelSerializer):
-    competences = serializers.ListField(
-        child=serializers.CharField(),
-        required=False,
-    )
-    candidatures_count = serializers.SerializerMethodField()
-
     class Meta:
         model = Offre
         fields = [
             'id',
             'titre',
             'description',
-            'experience_requise',
-            'competences',
+            'competences_requises',
+            'experience_demandee',
             'type_contrat',
-            'salaire_min',
-            'salaire_max',
+            'salaire_estime',
             'statut',
-            'date_publication',
-            'date_cloture',
-            'created_at',
-            'candidatures_count',
+            'date_creation',
         ]
-        read_only_fields = ['id', 'date_publication', 'created_at', 'candidatures_count']
-
-    def get_candidatures_count(self, obj):
-        return obj.get_candidatures_count()
-
-
-# Serialiseur pour creer une offre
-class OffreCreateSerializer(serializers.ModelSerializer):
-    competences = serializers.ListField(
-        child=serializers.CharField(),
-        required=False,
-    )
-
-    class Meta:
-        model = Offre
-        fields = [
-            'titre',
-            'description',
-            'experience_requise',
-            'competences',
-            'type_contrat',
-            'salaire_min',
-            'salaire_max',
-            'date_cloture',
-            'statut',
-        ]
-
-    def create(self, validated_data):
-        validated_data['statut'] = validated_data.get('statut', 'brouillon')
-        return super().create(validated_data)
-
-
-# Serialiseur simple pour la liste
-class OffreListSerializer(serializers.ModelSerializer):
-    competences = serializers.ListField(child=serializers.CharField(), read_only=True)
-    candidatures_count = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Offre
-        fields = [
-            'id',
-            'titre',
-            'description',
-            'experience_requise',
-            'competences',
-            'type_contrat',
-            'salaire_min',
-            'salaire_max',
-            'statut',
-            'date_publication',
-            'date_cloture',
-            'created_at',
-            'candidatures_count',
-        ]
-
-    def get_candidatures_count(self, obj):
-        return obj.get_candidatures_count()
+        read_only_fields = ['id', 'date_creation']

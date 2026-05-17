@@ -34,7 +34,6 @@ test.describe('Interview Scheduling Flow', () => {
     await page.locator('select[name="recruteur_id"]').selectOption({ label: 'Driss Mansouri' });
     await page.locator('select[name="type_entretien"]').selectOption('technique');
     await page.locator('input[name="lieu"]').fill('Bureau Principal');
-    await page.locator('input[name="lien_visio"]').fill('https://meet.google.com/abc-defg-hij');
     await page.getByRole('button', { name: 'Planifier l\'entretien' }).click();
     await expect(page.locator('text=Entretien planifié avec succès')).toBeVisible();
 

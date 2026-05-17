@@ -18,7 +18,6 @@ const ProfilePage = lazy(() => import('@/pages/shared/ProfilePage'))
 const NotFoundPage = lazy(() => import('@/pages/shared/NotFoundPage'))
 const EntretiensPage = lazy(() => import('@/pages/shared/EntretiensPage'))
 const EvaluationsPage = lazy(() => import('@/pages/shared/EvaluationsPage'))
-const VideoRoomPage = lazy(() => import('@/pages/shared/VideoRoomPage'))
 
 // Candidat — lazy loaded
 const OffresListPage = lazy(() => import('@/pages/candidat/OffresListPage'))
@@ -216,16 +215,6 @@ function AppRoutes() {
 
         {/* Profile */}
         <Route path="/profil" element={<ProfilePage />} />
-        
-        {/* Visioconférence */}
-        <Route
-          path="/visio/:id"
-          element={
-            <ProtectedRoute roles={['candidat', 'recruteur', 'rh', 'admin']}>
-              <VideoRoomPage />
-            </ProtectedRoute>
-          }
-        />
       </Route>
 
       {/* 404 */}

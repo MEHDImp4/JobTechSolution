@@ -18,7 +18,6 @@ const schema = z.object({
   duree_minutes: z.string().min(1, 'Durée requise'),
   type_entretien: z.string().min(1, 'Type requis'),
   lieu: z.string().optional(),
-  lien_visio: z.string().url('URL invalide').optional().or(z.literal('')),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -29,7 +28,6 @@ const getDefaultValues = (): FormValues => ({
   type_entretien: 'recrutement',
   date_heure: new Date(Date.now() + 86400000).toISOString().slice(0, 16), // Tomorrow
   lieu: '',
-  lien_visio: '',
 })
 
 interface PlanifierEntretienModalProps {
@@ -66,7 +64,6 @@ export function PlanifierEntretienModal({ open, onClose, candidature, onSuccess 
         duree_minutes: parseInt(data.duree_minutes),
         type_entretien: data.type_entretien,
         lieu: data.lieu,
-        lien_visio: data.lien_visio,
       })
       toast('success', 'Entretien planifié avec succès')
       onSuccess?.()
@@ -142,18 +139,12 @@ export function PlanifierEntretienModal({ open, onClose, candidature, onSuccess 
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           <Input
             label="Lieu (si physique)"
             placeholder="Bureau 402, Casablanca"
             error={errors.lieu?.message}
             {...register('lieu')}
-          />
-          <Input
-            label="Lien visio"
-            placeholder="https://meet.google.com/..."
-            error={errors.lien_visio?.message}
-            {...register('lien_visio')}
           />
         </div>
 
