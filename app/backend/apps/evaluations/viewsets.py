@@ -1,4 +1,5 @@
 # ViewSet pour les evaluations
+from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -22,18 +23,30 @@ class EvaluationViewSet(viewsets.ModelViewSet):
         qs = super().get_queryset()
 
         if hasattr(self.request.user, 'role'):
-            if self.request.user.role in ['rh', 'admin', 'recruteur']:
-                return qs.filter(entretien__recruteur=self.request.user)
-            elif self.request.user.role == 'candidat':
+            if self.request.user.role == 'candidat':
                 return qs.filter(entretien__candidat=self.request.user)
+            if self.request.user.role in ['rh', 'admin', 'recruteur']:
+                return qs
 
         return qs
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        eval = serializer.save()
-        return Response(EvaluationSerializer(eval).data, status=status.HTTP_201_CREATED)
+        validated = serializer.validated_data
+        entretien = validated['entretien']
+        defaults = {k: v for k, v in validated.items() if k != 'entretien'}
+        defaults['recruteur'] = request.user
+
+        if defaults.get('statut') == 'soumise':
+            defaults['soumise_at'] = timezone.now()
+
+        evaluation, created = Evaluation.objects.update_or_create(
+            entretien=entretien,
+            defaults=defaults,
+        )
+        response_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        return Response(EvaluationSerializer(evaluation).data, status=response_status)
 
     # Soumettre l'evaluation
     @action(detail=True, methods=['post'])

@@ -1,9 +1,12 @@
 # Tache pour generer les statistiques mensuelles
-from celery import shared_task
 from datetime import date, timedelta
+
+from celery import shared_task
 from django.utils import timezone
+
 from apps.candidatures.models import Candidature
 from apps.entretiens.models import Entretien
+
 from .models import KPISnapshot
 
 
@@ -18,10 +21,17 @@ def generate_monthly_snapshot():
     end = timezone.make_aware(timezone.datetime.combine(first_day, timezone.datetime.min.time()))
 
     try:
-        total_interviews = Entretien.objects.filter(date_heure__range=(start, end)).exclude(statut='annule').count()
-        total_hires = Candidature.objects.filter(statut='retenu', date_postulation__range=(start, end)).count()
+        total_interviews = (
+            Entretien.objects.filter(date_heure__range=(start, end))
+            .exclude(statut='annule')
+            .count()
+        )
+        total_hires = Candidature.objects.filter(
+            statut='retenu', date_postulation__range=(start, end)
+        ).count()
 
         from django.contrib.auth import get_user_model
+
         User = get_user_model()
         total_registrations = User.objects.filter(date_joined__range=(start, end)).count()
 

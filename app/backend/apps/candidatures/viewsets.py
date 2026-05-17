@@ -7,7 +7,11 @@ from rest_framework.response import Response
 from jobtech.pagination import StandardResultsSetPagination
 
 from .models import Candidature
-from .serializers import CandidatureCreateSerializer, CandidatureListSerializer, CandidatureSerializer
+from .serializers import (
+    CandidatureCreateSerializer,
+    CandidatureListSerializer,
+    CandidatureSerializer,
+)
 
 
 class CandidatureViewSet(viewsets.ModelViewSet):
@@ -42,24 +46,44 @@ class CandidatureViewSet(viewsets.ModelViewSet):
 
     def is_rh(self):
         return (
-            self.request.user.is_authenticated and
-            hasattr(self.request.user, 'role') and
-            self.request.user.role in ['rh', 'admin']
+            self.request.user.is_authenticated
+            and hasattr(self.request.user, 'role')
+            and self.request.user.role in ['rh', 'admin']
         )
 
     def create(self, request, *args, **kwargs):
-        # Verifier si deja postule
-        offre_id = request.data.get('offre')
+        # Verifier si deja postule (support offre et offre_id pour compatibilite)
+        data = request.data.copy()
+        offre_id = data.get('offre') or data.get('offre_id')
+
+        # Normaliser pour le serializer
+        if not data.get('offre') and data.get('offre_id'):
+            data['offre'] = data.get('offre_id')
+
         if Candidature.objects.filter(offre_id=offre_id, candidat=request.user).exists():
             return Response(
                 {'message': 'Vous avez deja poste a cette offre.'},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        serializer = self.get_serializer(data=request.data)
+        serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(candidat=request.user)
+        instance = serializer.save(candidat=request.user)
+
+        # Declencher l'analyse IA
+        try:
+            from apps.ia.tasks import analyze_cv
+
+            analyze_cv.delay(instance.id)
+        except Exception:
+            pass
+
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['post'])
+    def apply(self, request, *args, **kwargs):
+        """POST /candidatures/apply/ - alias pour create (compatibilite)"""
+        return self.create(request, *args, **kwargs)
 
     @action(detail=False, methods=['get'], url_path=r'offre/(?P<offre_id>\d+)')
     def offre(self, request, offre_id=None):
@@ -108,6 +132,19 @@ class CandidatureViewSet(viewsets.ModelViewSet):
                 'statut': candidature.statut,
             }
         )
+
+    @action(detail=True, methods=['post'], url_path='reanalyze-ia')
+    def reanalyze_ia(self, request, pk=None):
+        """POST /candidatures/{id}/reanalyze-ia/ - Force le re-calcul du score IA"""
+        if not self.is_rh():
+            return Response({'message': 'Interdit'}, status=403)
+
+        candidature = self.get_object()
+        from apps.ia.tasks import analyze_cv
+
+        analyze_cv.delay(candidature.id)
+
+        return Response({'message': 'Analyse relancee', 'ia_status': 'pending'})
 
     # Mise a jour groupée du statut (RH only)
     @action(detail=False, methods=['post'])

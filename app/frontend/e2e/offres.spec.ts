@@ -1,13 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { loginAs } from './helpers/auth';
 
 test.describe('Offres Management (RH)', () => {
   test.beforeEach(async ({ page }) => {
-    // Login as RH
-    await page.goto('/connexion');
-    await page.locator('input[name="email"]').fill('rh-test@jobtech.com');
-    await page.locator('input[name="password"]').fill('password123');
-    await page.getByRole('button', { name: 'Se connecter' }).click();
-    await expect(page).toHaveURL(/.*\/dashboard/);
+    await loginAs(page, 'rh');
   });
 
   test('should create a new job offer', async ({ page }) => {

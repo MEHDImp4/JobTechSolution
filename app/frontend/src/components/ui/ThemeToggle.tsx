@@ -12,7 +12,11 @@ export function ThemeToggle() {
   ]
 
   return (
-    <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-slate-800 rounded-lg">
+    <div
+      className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-slate-800 rounded-lg"
+      role="group"
+      aria-label="Sélection du thème"
+    >
       {themes.map((t) => {
         const Icon = t.icon
         const isActive = theme === t.value
@@ -21,6 +25,8 @@ export function ThemeToggle() {
             key={t.value}
             onClick={() => setTheme(t.value)}
             title={t.label}
+            aria-label={`Activer le thème ${t.label.toLowerCase()}`}
+            aria-pressed={isActive}
             className={cn(
               "p-1.5 rounded-md transition-all duration-200 cursor-pointer",
               isActive

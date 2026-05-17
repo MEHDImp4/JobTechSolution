@@ -39,10 +39,7 @@ class OffreViewSet(viewsets.ModelViewSet):
         # Filtres
         q = self.request.query_params.get('q')
         if q:
-            qs = qs.filter(
-                models.Q(titre__icontains=q) |
-                models.Q(description__icontains=q)
-            )
+            qs = qs.filter(models.Q(titre__icontains=q) | models.Q(description__icontains=q))
 
         type_contrat = self.request.query_params.get('type_contrat')
         if type_contrat:
@@ -56,9 +53,9 @@ class OffreViewSet(viewsets.ModelViewSet):
 
     def is_rh(self):
         return (
-            self.request.user.is_authenticated and
-            hasattr(self.request.user, 'role') and
-            self.request.user.role in ['rh', 'admin']
+            self.request.user.is_authenticated
+            and hasattr(self.request.user, 'role')
+            and self.request.user.role in ['rh', 'admin']
         )
 
     def create(self, request, *args, **kwargs):
@@ -66,6 +63,20 @@ class OffreViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         offre = serializer.save(created_by=request.user)
         return Response(OffreSerializer(offre).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'], url_path='toggle-status')
+    def toggle_status(self, request, pk=None):
+        """POST /offres/{id}/toggle-status/ - Change le statut de l'offre"""
+        offre = self.get_object()
+        if offre.statut == 'brouillon':
+            offre.publish()
+        elif offre.statut == 'publiee':
+            offre.close()
+        else:
+            offre.statut = 'brouillon'
+            offre.save()
+
+        return Response(OffreSerializer(offre).data)
 
     # Autocompletion pour les competences
     @action(detail=False, methods=['get'])

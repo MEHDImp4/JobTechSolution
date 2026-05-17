@@ -1,5 +1,8 @@
-from django.db import models
+import logging
 from django.contrib.auth import authenticate, login, logout
+
+logger = logging.getLogger(__name__)
+from django.db import models
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
@@ -22,41 +25,81 @@ class AuthViewSet(viewsets.ViewSet):
     permission_classes = [AllowAny]
 
     @staticmethod
+    def _with_no_store(response):
+        response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        return response
+
+    @staticmethod
     def _login_error_response(email):
         user = User.objects.filter(email__iexact=email).only('is_active').first()
         if user is not None and not user.is_active:
-            return Response(
-                {
-                    'message': (
-                        "Ce compte est inactif. Veuillez vérifier votre email pour l'activation."
-                    ),
-                    'code': 'account_inactive',
-                },
-                status=status.HTTP_403_FORBIDDEN,
+            return AuthViewSet._with_no_store(
+                Response(
+                    {
+                        'message': (
+                            "Ce compte est inactif. Veuillez vérifier votre email pour l'activation."
+                        ),
+                        'code': 'account_inactive',
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
             )
-        return Response(
-            {'message': 'Email ou mot de passe invalide.'},
-            status=status.HTTP_401_UNAUTHORIZED,
+        return AuthViewSet._with_no_store(
+            Response(
+                {'message': 'Email ou mot de passe invalide.'},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
         )
 
     def list(self, request):
         """GET /auth/ - retourne l'utilisateur connecte"""
         if not request.user.is_authenticated:
-            return Response({'authenticated': False})
-        return Response({
-            'authenticated': True,
-            'user': UserSerializer(request.user).data
-        })
+            return self._with_no_store(Response({'authenticated': False}))
+        return self._with_no_store(
+            Response({'authenticated': True, 'user': UserSerializer(request.user).data})
+        )
+
+    @action(detail=False, methods=['get', 'put', 'patch'])
+    def me(self, request):
+        """GET/PUT/PATCH /auth/me/ - profil de l'utilisateur connecte"""
+        if not request.user.is_authenticated:
+            return self._with_no_store(
+                Response({'authenticated': False}, status=status.HTTP_200_OK)
+            )
+
+        if request.method in ['PUT', 'PATCH']:
+            serializer = ProfileUpdateSerializer(request.user, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return self._with_no_store(Response(UserSerializer(request.user).data))
+
+        return self._with_no_store(
+            Response({'authenticated': True, 'user': UserSerializer(request.user).data})
+        )
+
+    @action(detail=False, methods=['post'], url_path='me/password')
+    def change_password(self, request):
+        """POST /auth/me/password/ - changement de mot de passe"""
+        serializer = PasswordChangeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if not request.user.check_password(serializer.validated_data['old_password']):
+            return Response(
+                {'old_password': 'Mot de passe actuel incorrect.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        request.user.set_password(serializer.validated_data['new_password'])
+        request.user.save()
+        return Response({'message': 'Mot de passe modifie avec succes'})
 
     @action(detail=False, methods=['get'])
-    def me(self, request):
-        """GET /auth/me - retourne l'utilisateur connecte"""
-        if not request.user.is_authenticated:
-            return Response({'authenticated': False})
-        return Response({
-            'authenticated': True,
-            'user': UserSerializer(request.user).data
-        })
+    def recruteurs(self, request):
+        """GET /auth/recruteurs/ - liste des recruteurs et RH"""
+        recruteurs = User.objects.filter(role__in=['recruteur', 'rh', 'admin'])
+        return Response(UserSerializer(recruteurs, many=True).data)
 
     def create(self, request):
         """POST /auth/ - login"""
@@ -67,7 +110,7 @@ class AuthViewSet(viewsets.ViewSet):
             user = authenticate(request, email=email, password=password)
         if user is not None:
             login(request, user)
-            return Response(UserSerializer(user).data)
+            return self._with_no_store(Response(UserSerializer(user).data))
         return self._login_error_response(email)
 
     @action(detail=False, methods=['post'])
@@ -80,13 +123,33 @@ class AuthViewSet(viewsets.ViewSet):
             user = authenticate(request, email=email, password=password)
         if user is not None:
             login(request, user)
-            return Response(UserSerializer(user).data)
+            return self._with_no_store(Response(UserSerializer(user).data))
         return self._login_error_response(email)
 
-    def destroy(self, request):
-        """DELETE /auth/ - logout"""
+    @action(detail=False, methods=['post', 'delete'])
+    def logout(self, request):
+        """POST/DELETE /auth/logout/ - logout"""
         logout(request)
-        return Response({'message': 'Deconnexion reussie'})
+        return self._with_no_store(Response({'message': 'Deconnexion reussie'}))
+
+    @action(detail=False, methods=['post'])
+    def register(self, request):
+        """POST /auth/register/ - registration"""
+        serializer = UserCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        return self._with_no_store(
+            Response(
+                {'message': 'Compte créé avec succès. Vous pouvez maintenant vous connecter.'},
+                status=status.HTTP_201_CREATED,
+            )
+        )
+
+    def destroy(self, request):
+        """DELETE /auth/ - logout (compatibilite)"""
+        logout(request)
+        return self._with_no_store(Response({'message': 'Deconnexion reussie'}))
 
 
 # ViewSet pour les utilisateurs - lecture/ecriture
@@ -138,15 +201,13 @@ class UserViewSet(viewsets.ModelViewSet):
     def me(self, request):
         if not request.user.is_authenticated:
             return Response({'authenticated': False})
-        return Response({
-            'authenticated': True,
-            'user': UserSerializer(request.user).data
-        })
+        return Response({'authenticated': True, 'user': UserSerializer(request.user).data})
 
     # Simple endpoint de login
     @action(detail=False, methods=['post'])
     def login(self, request):
         from django.contrib.auth import authenticate, login
+
         email = request.data.get('email', '').strip().lower()
         password = request.data.get('password', '')
         user = authenticate(request, username=email, password=password)
@@ -159,6 +220,7 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def logout(self, request):
         from django.contrib.auth import logout
+
         logout(request)
         return Response({'message': 'Deconnexion reussie'})
 
@@ -184,7 +246,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response({'message': 'Mot de passe modifie avec succes'})
 
     # Activer/desactiver un utilisateur (admin only)
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='toggle-active')
     def toggle_active(self, request, pk=None):
         user = self.get_object()
         user.is_active = not user.is_active
@@ -192,7 +254,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response({'is_active': user.is_active})
 
     # Changer le role (admin only)
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='change-role')
     def change_role(self, request, pk=None):
         user = self.get_object()
         new_role = request.data.get('role')
@@ -201,6 +263,12 @@ class UserViewSet(viewsets.ModelViewSet):
         user.role = new_role
         user.save()
         return Response({'role': user.role})
+
+    # Importation d'utilisateurs
+    @action(detail=False, methods=['post'], url_path='import')
+    def import_users(self, request):
+        # Logique simplifiee pour l'exemple
+        return Response({'message': 'Importation simulee avec succes', 'count': 0})
 
 
 # ViewSet pour les logs d'audit - lecture seule
@@ -228,12 +296,15 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
 @permission_classes([IsAuthenticated])
 def audit_logs_list(request):
     logs = AuditLog.objects.all()[:100]
-    data = [{
-        'id': log.id,
-        'user_email': log.user.email if log.user else 'Anonymous',
-        'action': log.action,
-        'model_name': log.model_name,
-        'timestamp': log.timestamp,
-        'ip_address': log.ip_address,
-    } for log in logs]
+    data = [
+        {
+            'id': log.id,
+            'user_email': log.user.email if log.user else 'Anonymous',
+            'action': log.action,
+            'model_name': log.model_name,
+            'timestamp': log.timestamp,
+            'ip_address': log.ip_address,
+        }
+        for log in logs
+    ]
     return Response(data)

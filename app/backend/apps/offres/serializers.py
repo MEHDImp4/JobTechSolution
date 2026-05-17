@@ -1,5 +1,6 @@
 # Serialiseurs pour les offres d'emploi
 from rest_framework import serializers
+
 from .models import Competence, Offre
 
 
@@ -21,9 +22,19 @@ class OffreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Offre
         fields = [
-            'id', 'titre', 'description', 'experience_requise', 'competences',
-            'type_contrat', 'salaire_min', 'salaire_max', 'statut',
-            'date_publication', 'date_cloture', 'created_at', 'candidatures_count'
+            'id',
+            'titre',
+            'description',
+            'experience_requise',
+            'competences',
+            'type_contrat',
+            'salaire_min',
+            'salaire_max',
+            'statut',
+            'date_publication',
+            'date_cloture',
+            'created_at',
+            'candidatures_count',
         ]
         read_only_fields = ['id', 'date_publication', 'created_at', 'candidatures_count']
 
@@ -41,9 +52,15 @@ class OffreCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Offre
         fields = [
-            'titre', 'description', 'experience_requise', 'competences',
-            'type_contrat', 'salaire_min', 'salaire_max',
-            'date_cloture', 'statut'
+            'titre',
+            'description',
+            'experience_requise',
+            'competences',
+            'type_contrat',
+            'salaire_min',
+            'salaire_max',
+            'date_cloture',
+            'statut',
         ]
 
     def create(self, validated_data):

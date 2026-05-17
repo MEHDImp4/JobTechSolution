@@ -39,6 +39,7 @@ export default function StatistiquesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [periode, setPeriode] = useState('30d')
+  const [exporting, setExporting] = useState(false)
 
   const chartTheme = {
     grid: isDark ? 'rgba(14, 165, 233, 0.1)' : '#E5E7EB',
@@ -67,6 +68,23 @@ export default function StatistiquesPage() {
 
   if (loading) return <LoadingState />
   if (error || !data) return <ErrorState message={error} />
+
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      const { blob, filename } = await statistiquesService.exportCsv(periode)
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = filename || 'candidatures_export.csv'
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const safeData = data ?? EMPTY_KPI_DATA
 
@@ -97,11 +115,15 @@ export default function StatistiquesPage() {
             <option value="90d">90j</option>
             <option value="365d">1 an</option>
           </select>
-          <a href={statistiquesService.exportCsvUrl(periode)} download className="flex-1 sm:flex-none">
-            <Button variant="secondary" icon={<Download className="h-4 w-4" />} className="w-full">
-              Export
-            </Button>
-          </a>
+          <Button
+            variant="secondary"
+            icon={<Download className="h-4 w-4" />}
+            className="w-full sm:w-auto"
+            onClick={handleExport}
+            loading={exporting}
+          >
+            Export
+          </Button>
         </div>
       </div>
 

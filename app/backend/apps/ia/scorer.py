@@ -4,8 +4,6 @@ Utilise des techniques de vectorisation et de similarité sémantique.
 """
 
 import spacy
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 
 
 class CompatibilityScorer:
@@ -29,7 +27,13 @@ class CompatibilityScorer:
         cv_competences = cv_data.competences_extraites or []
         offre_competences = offre.competences or []
         experience_requise = getattr(offre, 'experience_requise', 0) or 0
-        experience_candidat = cv_data.experience_annees or 0
+
+        # Priorite a l'experience extraite par l'IA, sinon celle declaree
+        experience_candidat = cv_data.experience_annees
+        if experience_candidat is None:
+            experience_candidat = getattr(cv_data.candidature, 'experience_annees', 0) or 0
+
+        experience_candidat = int(experience_candidat)
 
         # Si le CV est vide
         if not cv_competences and not (experience_candidat or 0):
@@ -69,12 +73,12 @@ class CompatibilityScorer:
             for c in offre_competences:
                 if c.lower() in cv_set:
                     matching_competences.append(c)
-            
+
             remaining_offre = []
             for c in offre_competences:
                 if c.lower() not in cv_set:
                     remaining_offre.append(c)
-            
+
             semantic_matches = []
             if self._nlp and remaining_offre:
                 cv_docs = []
@@ -93,15 +97,14 @@ class CompatibilityScorer:
                                 sim = req_doc.similarity(cv_doc)
                             except Exception:
                                 sim = 0
-                            if sim > best_sim:
-                                best_sim = sim
+                            best_sim = max(best_sim, sim)
 
                     if best_sim > 0.85:
                         semantic_matches.append(req)
 
             total_matches = len(matching_competences) + len(semantic_matches)
             score_competences = (total_matches / len(offre_competences)) * 100
-            
+
             for c in semantic_matches:
                 matching_competences.append(c)
             missing_competences = []

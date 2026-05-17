@@ -22,11 +22,6 @@ export default function OffresListPage() {
   const [appliedSearch, setAppliedSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
 
-  useEffect(() => {
-    loadOffres()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [typeFilter, page, appliedSearch])
-
   async function loadOffres() {
     setLoading(true)
     setError('')
@@ -49,6 +44,13 @@ export default function OffresListPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    // This effect intentionally triggers the page fetch when filters or pagination change.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadOffres()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [typeFilter, page, appliedSearch])
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()

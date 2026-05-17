@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { MapPin, Banknote, Users, Calendar, ArrowUpRight, Clock, Briefcase } from 'lucide-react'
+import { MapPin, Banknote, Users, ArrowUpRight, Clock } from 'lucide-react'
 import { StatusBadge, Badge } from '@/components/ui/Badge'
 import { formatDate, formatSalary } from '@/lib/utils'
 import { TYPE_CONTRAT, OFFRE_STATUTS } from '@/lib/constants'
@@ -21,6 +21,7 @@ export function JobCard({ offre, variant = 'public' }: JobCardProps) {
   return (
     <div 
       onClick={() => variant === 'public' && navigate(`/offres/${offre.id}`)}
+      data-testid="job-card"
       className={cn(
         "group flex flex-col bg-white dark:bg-slate-900 border border-[#EAEAEA] dark:border-white/10 p-6 transition-all duration-200",
         variant === 'public' 

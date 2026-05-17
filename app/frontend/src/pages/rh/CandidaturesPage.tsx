@@ -5,7 +5,6 @@ import { LoadingState, ErrorState, EmptyState } from '@/components/feedback/Stat
 import { toast } from '@/components/feedback/Toast'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
-import { Input } from '@/components/ui/Input'
 import { PaginationControls } from '@/components/ui/PaginationControls'
 import { candidaturesService } from '@/services/candidatures.service'
 import { offresService } from '@/services/offres.service'
@@ -45,7 +44,9 @@ export default function CandidaturesPage() {
         setOffresHasPrevious(Boolean(response.previous))
         if (data.length > 0 && (!selectedOffre || !data.some((offre) => offre.id === selectedOffre))) {
           const firstActive = data.find(o => o.statut === 'publiee') || data[0]
-          setSelectedOffre(firstActive.id)
+          if (firstActive) {
+            setSelectedOffre(firstActive.id)
+          }
         }
       } catch {
         setError('Impossible de charger les offres')
@@ -201,7 +202,7 @@ export default function CandidaturesPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto custom-scrollbar pb-6 pr-1">
-              <CandidatureList offreId={selectedOffreData.id} viewMode={viewMode} />
+              <CandidatureList key={selectedOffreData.id} offreId={selectedOffreData.id} viewMode={viewMode} />
             </div>
           </>
         ) : (
@@ -256,10 +257,6 @@ function CandidatureList({ offreId, viewMode }: { offreId: number, viewMode: 'ta
     fetchCandidatures()
     return () => { ignore = true }
   }, [offreId, page])
-
-  useEffect(() => {
-    setPage(1)
-  }, [offreId])
 
   async function handleStatusChange(id: number, statut: string) {
     try {
@@ -396,8 +393,8 @@ function CandidatureList({ offreId, viewMode }: { offreId: number, viewMode: 'ta
                         />
                       </td>
                       <td className="px-4 py-3">
-                        <p className="font-medium text-gray-900 dark:text-white">{(c as Candidature & { candidat_nom?: string }).candidat_nom}</p>
-                        <p className="text-xs text-gray-500 dark:text-slate-400">{(c as Candidature & { candidat_email?: string }).candidat_email}</p>
+                        <p className="font-medium text-gray-900 dark:text-white">{c.candidat_nom}</p>
+                        <p className="text-xs text-gray-500 dark:text-slate-400">{c.candidat_email}</p>
                       </td>
                       <td className="px-4 py-3">
                         <button 
@@ -457,8 +454,8 @@ function CandidatureList({ offreId, viewMode }: { offreId: number, viewMode: 'ta
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start">
                         <div>
-                          <p className="font-medium text-gray-900 dark:text-white truncate">{(c as Candidature & { candidat_nom?: string }).candidat_nom}</p>
-                          <p className="text-xs text-gray-500 dark:text-slate-400">{(c as Candidature & { candidat_email?: string }).candidat_email}</p>
+                          <p className="font-medium text-gray-900 dark:text-white truncate">{c.candidat_nom}</p>
+                          <p className="text-xs text-gray-500 dark:text-slate-400">{c.candidat_email}</p>
                         </div>
                         <div className="text-right">
                           <button 
@@ -518,7 +515,7 @@ function CandidatureList({ offreId, viewMode }: { offreId: number, viewMode: 'ta
           <Modal open={!!statusModal} onClose={() => setStatusModal(null)} title="Changer le statut">
             <div className="space-y-3">
               <p className="text-sm text-gray-500">
-                Action sur la candidature de <strong>{(statusModal as Candidature & { candidat_nom?: string }).candidat_nom}</strong>
+                Action sur la candidature de <strong>{statusModal.candidat_nom}</strong>
               </p>
             <div className="grid grid-cols-2 gap-2">
               {Object.entries(CANDIDATURE_STATUTS).map(([key, config]) => (
@@ -567,7 +564,7 @@ function CandidatureList({ offreId, viewMode }: { offreId: number, viewMode: 'ta
           open={!!iaModal}
           onClose={() => setIaModal(null)}
           candidatureId={iaModal.id}
-          candidatNom={(iaModal as any).candidat_nom || 'Candidat'}
+          candidatNom={iaModal.candidat_nom || 'Candidat'}
         />
       )}
     </>

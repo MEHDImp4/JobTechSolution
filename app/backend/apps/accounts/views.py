@@ -210,15 +210,9 @@ class RegisterView(View):
 
         form = RegisterForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            # Send activation email asynchronously via Celery
-            try:
-                from apps.notifications.tasks import send_activation_email
-
-                send_activation_email.delay(user.pk, request.get_host(), request.is_secure())
-            except Exception:
-                logger.exception('Failed to enqueue activation email for user pk=%s', user.pk)
-            return redirect('accounts:register_success')
+            form.save()
+            messages.success(request, 'Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter.')
+            return redirect('accounts:login')
 
         return render(request, self.template_name, {'form': form})
 

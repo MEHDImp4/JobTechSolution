@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils'
 import { Logo } from '@/components/ui'
 import { useAuthStore } from '@/stores/authStore'
 import { NAV_ITEMS, type UserRole, type NavItem } from '@/lib/constants'
-import { PwaInstallPrompt } from '@/components/pwa/PwaInstallPrompt'
 
 const iconMap: Record<string, React.ElementType> = {
   Briefcase, FileText, LayoutDashboard, Calendar, ClipboardCheck,
@@ -58,6 +57,7 @@ export function Sidebar({ collapsed, onToggle, isOpen, onClose }: SidebarProps) 
           <button 
             onClick={onClose}
             className="lg:hidden p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
+            aria-label="Fermer le menu"
           >
             <X className="h-6 w-6" />
           </button>
@@ -92,10 +92,6 @@ export function Sidebar({ collapsed, onToggle, isOpen, onClose }: SidebarProps) 
               </NavLink>
             )
           })}
-
-          <div className={cn("transition-all duration-300", collapsed ? "hidden" : "block")}>
-            <PwaInstallPrompt />
-          </div>
         </nav>
 
         {/* Collapse Toggle - Desktop only */}
@@ -103,6 +99,7 @@ export function Sidebar({ collapsed, onToggle, isOpen, onClose }: SidebarProps) 
           <button
             onClick={onToggle}
             className="flex items-center justify-center w-full h-9 rounded-lg text-gray-500 dark:text-slate-400 hover:text-brand-600 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
+            aria-label={collapsed ? 'Déplier la barre latérale' : 'Replier la barre latérale'}
           >
             {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
           </button>

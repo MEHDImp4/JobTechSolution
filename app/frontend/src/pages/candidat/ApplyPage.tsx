@@ -72,7 +72,7 @@ export default function ApplyPage() {
     setLoading(true)
     try {
       const formData = new FormData()
-      formData.append('offre_id', String(id))
+      formData.append('offre', String(id))
       formData.append('cv_file', file)
       formData.append('telephone', data.telephone)
       formData.append('experience_annees', String(data.experience_annees))

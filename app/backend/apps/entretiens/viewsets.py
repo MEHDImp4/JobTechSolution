@@ -61,3 +61,30 @@ class EntretienViewSet(viewsets.ModelViewSet):
             entretien.save(update_fields=['statut'])
             return Response(EntretienSerializer(entretien).data)
         return Response({'statut': 'Statut invalide'}, status=400)
+
+    # Obtenir l'acces a la salle Jitsi
+    @action(detail=True, methods=['get'], url_path='room')
+    def room(self, request, pk=None):
+        entretien = self.get_object()
+
+        # Securite : seul le candidat ou le recruteur peuvent acceder
+        if (
+            request.user != entretien.candidat
+            and request.user != entretien.recruteur
+            and not request.user.is_staff
+        ):
+            return Response({'message': 'Acces refuse'}, status=403)
+
+        # Generer un nom de salle unique et sur
+        from django.utils.text import slugify
+
+        candidat_slug = slugify(entretien.candidat.nom)
+        room_name = f"JobTech-Entretien-{entretien.id}-{candidat_slug}"
+
+        return Response(
+            {
+                'room_name': room_name,
+                'jitsi_domain': 'meet.jit.si',
+                'external_url': f"https://meet.jit.si/{room_name}",
+            }
+        )

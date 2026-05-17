@@ -1,0 +1,16 @@
+export const routes = {
+  login: '/connexion',
+  register: '/inscription',
+  dashboard: '/dashboard',
+  offers: '/offres',
+  applications: '/mes-candidatures',
+  offersManage: '/gestion-offres',
+  candidatures: '/candidatures',
+  statistiques: '/statistiques',
+  adminUsers: '/admin/utilisateurs',
+  adminAudit: '/admin/audit',
+  profile: '/profil',
+  interviews: '/entretiens',
+  evaluations: '/evaluations',
+  notFound: '/page-introuvable-de-test',
+} as const

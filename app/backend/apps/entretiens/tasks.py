@@ -13,6 +13,7 @@ def summarize_entretien_task(self, entretien_id):
             return 'No notes'
 
         from apps.ia.llm_client import LLMClient
+
         client = LLMClient()
         summary = client.generate_meeting_summary(entretien.notes)
 

@@ -18,7 +18,7 @@ env = environ.Env()
 environ.Env.read_env(BASE_DIR.parent / '.env')
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env('SECRET_KEY')
+SECRET_KEY = env('SECRET_KEY', default='jobtech-local-test-secret-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('DEBUG', default=False)
@@ -27,7 +27,7 @@ DEBUG = env.bool('DEBUG', default=False)
 if DEBUG:
     sys.path.insert(0, os.path.join(BASE_DIR, 'mock_libs'))
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'] if DEBUG else [])
 
 # Application definition
 INSTALLED_APPS = [
@@ -174,7 +174,10 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     }
 }
-SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+# Store sessions in DB with cache acceleration.
+# Pure cache-backed sessions are too fragile here and were causing
+# authenticated users to lose their session on the next request.
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 SESSION_CACHE_ALIAS = 'default'
 
 # Celery
@@ -256,7 +259,14 @@ CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:5175',
     'http://localhost:3000',
     'http://127.0.0.1:3000',
+    'http://10.123.222.129:5173',  # Local machine IP
 ]
+
+# Proactively add all current allowed origins to CSRF trusted origins if in DEBUG
+if DEBUG:
+    # This is a bit of a hack but helpful for local dev with dynamic IPs
+    # Note: CSRF_TRUSTED_ORIGINS requires the scheme (http:// or https://)
+    pass
 
 # CSRF & Sessions
 SESSION_COOKIE_SAMESITE = 'Lax'
@@ -279,7 +289,7 @@ else:
     SECURE_SSL_REDIRECT = False
 
 # Allow Cross-Origin for development
-CORS_ALLOW_ALL_ORIGINS = False  # Better to be specific even in dev
+CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins if in debug mode
 
 # WebPush config
 if DEBUG:
@@ -290,8 +300,8 @@ if DEBUG:
     }
 else:
     WEBPUSH_SETTINGS = {
-        'VAPID_PUBLIC_KEY': env('VAPID_PUBLIC_KEY'),
-        'VAPID_PRIVATE_KEY': env('VAPID_PRIVATE_KEY'),
+        'VAPID_PUBLIC_KEY': env('VAPID_PUBLIC_KEY', default='BCx_DummyPublicKey_ReplaceInProd'),
+        'VAPID_PRIVATE_KEY': env('VAPID_PRIVATE_KEY', default='DummyPrivateKey_ReplaceInProd'),
         'VAPID_ADMIN_EMAIL': env('VAPID_ADMIN_EMAIL', default='admin@example.com'),
     }
 

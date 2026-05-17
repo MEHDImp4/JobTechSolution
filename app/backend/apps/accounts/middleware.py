@@ -3,6 +3,7 @@ Middlewares pour la gestion de l'audit.
 """
 
 from django.utils.deprecation import MiddlewareMixin
+from kombu.exceptions import OperationalError
 
 EXCLUDED_PATHS = [
     '/accounts/notes/save/',
@@ -47,14 +48,20 @@ class AuditMiddleware(MiddlewareMixin):
 
         from apps.accounts.tasks import create_audit_log
 
-        create_audit_log.delay(
-            user_id=user.id if user else None,
-            action=action,
-            model_name=model_name,
-            ip_address=ip_address,
-            user_agent=user_agent,
-            endpoint=endpoint,
-        )
+        payload = {
+            'user_id': user.id if user else None,
+            'action': action,
+            'model_name': model_name,
+            'ip_address': ip_address,
+            'user_agent': user_agent,
+            'endpoint': endpoint,
+        }
+
+        try:
+            create_audit_log.delay(**payload)
+        except OperationalError:
+            # Keep writes working when the broker is intentionally absent in local QA.
+            create_audit_log(**payload)
 
         return response
 

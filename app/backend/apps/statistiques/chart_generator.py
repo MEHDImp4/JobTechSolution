@@ -14,6 +14,7 @@ class DashboardChartGenerator:
     def _to_base64(self, fig) -> str:
         """Convertit une figure Matplotlib en chaîne base64 PNG."""
         import matplotlib
+
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
 
@@ -26,6 +27,7 @@ class DashboardChartGenerator:
     def score_distribution(self, candidatures_qs) -> str:
         """Graphique à barres montrant la répartition des scores IA."""
         import matplotlib
+
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
 
@@ -66,8 +68,10 @@ class DashboardChartGenerator:
     def candidatures_timeline(self, candidatures_qs, days=30) -> str:
         """Graphique en aire montrant l'évolution des candidatures sur 30 jours."""
         import matplotlib
+
         matplotlib.use('Agg')
         from datetime import timedelta
+
         import matplotlib.pyplot as plt
         from django.utils import timezone
 
@@ -105,6 +109,7 @@ class DashboardChartGenerator:
     def recommendations_pie(self, evaluations_qs) -> str:
         """Graphique circulaire montrant la répartition des recommandations."""
         import matplotlib
+
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
         from django.db.models import Count
@@ -123,7 +128,7 @@ class DashboardChartGenerator:
         colors_list = ['#16A34A', '#F59E0B', '#DC2626']
 
         filtered = []
-        for l, v, c in zip(labels, vals, colors_list):
+        for l, v, c in zip(labels, vals, colors_list, strict=True):
             if v > 0:
                 filtered.append((l, v, c))
         if not filtered:

@@ -9,7 +9,7 @@ export const candidaturesService = {
 
   getStatus: (id: number) => apiGet<CandidatureStatus>(`candidatures/${id}/status`),
 
-  apply: (formData: FormData) => apiPostForm<Candidature>('candidatures/apply', formData),
+  apply: (formData: FormData) => apiPostForm<Candidature>('candidatures', formData),
 
   updateStatus: (id: number, statut: string) =>
     apiPost<CandidatureStatus>(`candidatures/${id}/statut`, { statut }),

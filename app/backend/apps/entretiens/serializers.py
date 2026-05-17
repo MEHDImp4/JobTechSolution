@@ -1,8 +1,8 @@
 # Serializers for the entretiens API
 from rest_framework import serializers
 
-from apps.candidatures.models import Candidature
 from apps.accounts.models import User
+from apps.candidatures.models import Candidature
 
 from .models import Entretien, ObjectifEntretien
 

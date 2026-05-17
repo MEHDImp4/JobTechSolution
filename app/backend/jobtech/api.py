@@ -1,12 +1,12 @@
 # Configuration API DRF - remplacer Ninja
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from apps.accounts.viewsets import AuthViewSet, UserViewSet, AuditLogViewSet
-from apps.offres.viewsets import OffreViewSet, CompetenceViewSet
+from apps.accounts.viewsets import AuditLogViewSet, AuthViewSet, UserViewSet
 from apps.candidatures.viewsets import CandidatureViewSet
 from apps.entretiens.viewsets import EntretienViewSet
 from apps.evaluations.viewsets import EvaluationViewSet
+from apps.offres.viewsets import CompetenceViewSet, OffreViewSet
 from apps.statistiques.viewsets import KPIViewSet, dashboard_stats
 
 # Auth router
@@ -38,6 +38,7 @@ router.register(r'kpi', KPIViewSet, basename='kpi')
 
 urlpatterns = [
     path('auth/', include(auth_router.urls)),
+    path('statistiques/', include('apps.statistiques.urls')),
     path('statistiques/rh/', dashboard_stats, name='statistiques-rh'),
     path('', include(router.urls)),
 ]

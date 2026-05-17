@@ -55,6 +55,9 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         <button
           onClick={() => setMenuOpen(!menuOpen)}
           className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          aria-label="Ouvrir le menu utilisateur"
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
         >
           <div className="flex items-center justify-center w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 text-sm font-semibold">
             {getInitials(user.get_full_name)}

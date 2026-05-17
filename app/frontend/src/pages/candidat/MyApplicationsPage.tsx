@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Loader2, Sparkles } from 'lucide-react'
 import { StatusBadge } from '@/components/ui/Badge'
 import { LoadingState, ErrorState, EmptyState } from '@/components/feedback/States'
@@ -40,20 +40,31 @@ export default function MyApplicationsPage() {
   const [error, setError] = useState('')
   const [iaModal, setIaModal] = useState<Candidature | null>(null)
 
-  async function load(silent = false) {
-    try {
-      if (!silent) setLoading(true)
-      const data = await candidaturesService.myApplications()
-      setApplications(data)
-    } catch {
-      if (!silent) setError('Impossible de charger vos candidatures')
-    } finally {
-      if (!silent) setLoading(false)
-    }
-  }
-
   useEffect(() => {
-    load()
+    let ignore = false
+
+    async function fetchApplications() {
+      try {
+        const data = await candidaturesService.myApplications()
+        if (!ignore) {
+          setApplications(data)
+        }
+      } catch {
+        if (!ignore) {
+          setError('Impossible de charger vos candidatures')
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void fetchApplications()
+
+    return () => {
+      ignore = true
+    }
   }, [])
 
   // Polling si une analyse est en cours
@@ -62,7 +73,11 @@ export default function MyApplicationsPage() {
     
     if (hasProcessing) {
       const interval = setInterval(() => {
-        load(true)
+        void candidaturesService.myApplications()
+          .then((data) => {
+            setApplications(data)
+          })
+          .catch(() => {})
       }, 3000)
       return () => clearInterval(interval)
     }
@@ -150,7 +165,7 @@ export default function MyApplicationsPage() {
           open={!!iaModal}
           onClose={() => setIaModal(null)}
           candidatureId={iaModal.id}
-          candidatNom={(iaModal as any).candidat_nom || (user?.nom ? `${user.nom} ${user.prenom}` : 'Ma candidature')}
+          candidatNom={iaModal.candidat_nom || (user?.nom ? `${user.nom} ${user.prenom}` : 'Ma candidature')}
         />
       )}
     </div>

@@ -1,77 +1,68 @@
 # État d'Avancement du Projet : JobTech Solutions
 
-**Date :** 20 Avril 2026  
-**Cours :** Outils de développement / Programmation Python  
+**Date :** 16 Mai 2026  
+**Phase :** Finalisation & Stabilisation  
 **Établissement :** EMSI — École Marocaine des Sciences de l'Ingénieur  
-**Enseignants :** O. OUADOUD / R. Filali / F. Ebobiss  
 
 ---
 
 ## 👥 Équipe Projet
 | Nom et Prénom | Rôle | Responsabilités principales |
 | :--- | :--- | :--- |
-| **Diouri Mehdi** | Chef de projet / Backend | Architecture Django, Modèles ORM, Sécurité RBAC |
-| **El Kharrazi Ibtihal** | Designer UI/UX / Frontend | Conception des interfaces, Charte graphique, UX |
-| **Assaadi Mohamed Nadir** | IA / Data Scientist | Pipeline NLP, Analyse de données, Modèles IA |
+| **Diouri Mehdi** | Chef de projet / Backend | Architecture Django, DRF, Sécurité, DevOps |
+| **El Kharrazi Ibtihal** | Designer UI/UX / Frontend | React, Tailwind CSS, Expérience Utilisateur |
+| **Assaadi Mohamed Nadir** | IA / Data Scientist | Analyse NLP des CV, Scoring IA |
 
 ---
 
-## 🎯 Objectif de la Phase Actuelle
-Cette phase se concentre sur la **conception technique** et la **modélisation des données**, ainsi que la mise en place de l'infrastructure de base (Base de données et environnement de développement).
+## 🎯 Statut Actuel
+Le projet est en phase finale de stabilisation. Les fonctionnalités majeures sont implémentées (Auth, Offres, Candidatures, Entretiens, Evaluations, Statistiques, IA).
+
+### ✅ Mises à jour récentes (16/05/2026) :
+- **Correction d'erreurs 405 (Method Not Allowed)** : 
+    - Unification des endpoints d'authentification dans `AuthViewSet`.
+    - Ajout des actions manquantes : `register`, `logout`, `change_password`, `update_profile`.
+    - Correction de l'endpoint de postulation (`/api/candidatures/apply/`).
+- **Amélioration de l'API** :
+    - Alignement des noms de chemins (URL paths) entre le frontend et le backend (utilisation de tirets `-` au lieu de underscores `_`).
+    - Support complet des méthodes HTTP (POST, DELETE, PATCH) pour les actions d'authentification.
+- **Tests & Validation** :
+    - Création d'une suite de tests automatisés pour valider les endpoints d'authentification.
+    - Vérification du processus complet de déconnexion et de mise à jour de profil.
 
 ---
 
-## 🛠️ Infrastructure & Setup Database
-Le projet utilise une architecture moderne et robuste pour garantir la scalabilité et la performance :
+## 📊 Modules Complétés
 
-- **Framework Backend :** Django 5.x (Architecture MVT).
-- **Base de Données :** **MySQL 8.0**. 
-    - Le choix de MySQL permet une gestion relationnelle rigoureuse, indispensable pour le suivi des entretiens et des candidatures.
-    - Configuration du moteur `InnoDB` pour supporter les transactions et les clés étrangères.
-- **Environnement :** Virtualenv Python, Git pour le versioning.
+### 1. Authentification & Profils
+- Système complet RBAC (Admin, RH, Recruteur, Candidat).
+- Gestion des profils et changements de mots de passe.
+- Journalisation d'audit pour la traçabilité.
 
----
+### 2. Gestion des Recrutements
+- Cycle de vie des offres (Brouillon -> Publiée -> Clôturée).
+- Système de postulation avec téléchargement de CV.
+- Dashboard RH avec KPIs en temps réel.
 
-## 📊 Modélisation des Données (Modèles Django)
-
-La structure de la base de données a été modélisée pour répondre aux exigences du cahier des charges. Voici les principaux modèles créés :
-
-### 1. Gestion des Utilisateurs (App: `accounts`)
-- **User** : Modèle personnalisé (`AbstractUser`) gérant quatre rôles (Admin, RH, Recruteur, Candidat).
-- **Company** : Pivot de l'architecture SaaS, permettant d'isoler les données par entreprise.
-- **AuditLog** : Journalisation de toutes les actions utilisateur pour la traçabilité.
-
-### 2. Gestion des Offres (App: `offres`)
-- **Offre** : Détails du poste (titre, description, type de contrat, salaire, etc.).
-- **Competence** : Liste des compétences requises pour chaque offre.
-
-### 3. Gestion des Candidatures (App: `candidatures`)
-- **Candidature** : Lien entre un Candidat et une Offre, incluant le stockage du CV et la lettre de motivation.
-
-### 4. Suivi des Entretiens (App: `entretiens`)
-- **Entretien** : Planification (date, heure, recruteur, candidat).
-- **Evaluation** : Formulaire structuré rempli par le recruteur après l'entretien.
+### 3. IA & Entretiens
+- Pipeline NLP pour l'analyse automatique des CV.
+- Scoring des candidatures par rapport aux offres.
+- Planification d'entretiens et système d'évaluation structuré.
 
 ---
 
-## 📐 Relations entre les Tables (Diagramme Logique)
-
-Le système repose sur un schéma relationnel cohérent :
-- **Relation 1:N (One-to-Many)** :
-    - Une `Company` possède plusieurs `Users` et plusieurs `Offres`.
-    - Une `Offre` peut recevoir plusieurs `Candidatures`.
-    - Un `User` (Recruteur) peut mener plusieurs `Entretiens`.
-- **Relation N:N (Many-to-Many)** :
-    - Une `Offre` est liée à plusieurs `Competences` (via JSON ou table de jointure).
-- **Relation 1:1 (One-to-One)** :
-    - Un `Entretien` a exactement une `Evaluation` finale.
+## 📐 Architecture Technique
+- **Backend :** Django 5.x + Django Rest Framework (DRF).
+- **Frontend :** React 18 + Vite + Tailwind CSS + Zustand.
+- **Base de Données :** MySQL 8.0.
+- **PWA :** Support du mode offline et notifications Push.
 
 ---
 
 ## 📈 Prochaines Étapes
-1. Développement des interfaces de capture des données (CRUD Offres et Candidatures).
-2. Intégration des premières fonctions de parsing de CV.
-3. Mise en place du système de notifications par email pour les rappels d'entretiens.
+1. Finalisation de la documentation technique finale.
+2. Préparation de la démo pour la soutenance finale.
+3. Déploiement en environnement de pré-production via Docker.
 
 ---
-**Rapport généré pour la soutenance d'étape du 20/04/2026.**
+**Rapport mis à jour le 16/05/2026 suite à la phase de stabilisation technique.**

@@ -90,7 +90,7 @@ class ExportCSVView(RHOrAdminMixin, View):
         for c in qs:
             recruteur_obj = c.entretiens.first()
             recruteur_name = (
-                recruteur_obj.recruteur.get_full_name()
+                recruteur_obj.recruteur.get_full_name
                 if recruteur_obj and recruteur_obj.recruteur
                 else ''
             )
@@ -98,7 +98,7 @@ class ExportCSVView(RHOrAdminMixin, View):
             writer.writerow(
                 [
                     c.id,
-                    c.candidat.get_full_name(),
+                    c.candidat.get_full_name,
                     c.candidat.email,
                     c.offre.titre,
                     c.score_ia,

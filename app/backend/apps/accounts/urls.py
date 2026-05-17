@@ -4,8 +4,7 @@ Namespace: accounts
 """
 
 from django.contrib.auth import views as auth_views
-from django.urls import path, include
-
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from .views import (
@@ -20,7 +19,7 @@ from .views import (
     UserRoleChangeView,
     UserToggleActiveView,
 )
-from .viewsets import UserViewSet, AuditLogViewSet
+from .viewsets import UserViewSet
 
 app_name = 'accounts'
 

@@ -1,5 +1,6 @@
 # Serialiseurs pour les candidatures
 from rest_framework import serializers
+
 from .models import Candidature
 
 

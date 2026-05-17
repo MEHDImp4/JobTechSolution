@@ -1,0 +1,16 @@
+import{n as e}from"./chunk-BneVvdWh.js";import{n as t,r as n,t as r}from"./jsx-runtime-Cyf6BxT7.js";function i({children:e,className:n,variant:r=`default`}){return(0,o.jsx)(`span`,{className:t(`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider`,s[r],n),children:e})}function a({className:e,children:n}){return(0,o.jsx)(`span`,{className:t(`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider`,e),children:n})}var o,s,c=e((()=>{n(),o=r(),s={default:`bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 border border-transparent dark:border-white/5`,success:`bg-success-light dark:bg-emerald-500/10 text-success dark:text-emerald-400 border border-transparent dark:border-emerald-500/20`,warning:`bg-warning-light dark:bg-amber-500/10 text-warning dark:text-amber-400 border border-transparent dark:border-amber-500/20`,danger:`bg-danger-light dark:bg-rose-500/10 text-danger dark:text-rose-400 border border-transparent dark:border-rose-500/20`,info:`bg-info-light dark:bg-sky-500/10 text-info dark:text-sky-400 border border-transparent dark:border-sky-500/20`},i.__docgenInfo={description:``,methods:[],displayName:`Badge`,props:{children:{required:!0,tsType:{name:`ReactReactNode`,raw:`React.ReactNode`},description:``},className:{required:!1,tsType:{name:`string`},description:``},variant:{required:!1,tsType:{name:`union`,raw:`'default' | 'success' | 'warning' | 'danger' | 'info'`,elements:[{name:`literal`,value:`'default'`},{name:`literal`,value:`'success'`},{name:`literal`,value:`'warning'`},{name:`literal`,value:`'danger'`},{name:`literal`,value:`'info'`}]},description:``,defaultValue:{value:`'default'`,computed:!1}}}},a.__docgenInfo={description:``,methods:[],displayName:`StatusBadge`,props:{className:{required:!0,tsType:{name:`string`},description:``},children:{required:!0,tsType:{name:`ReactReactNode`,raw:`React.ReactNode`},description:``}}}})),l,u,d,f,p,m;e((()=>{c(),l={title:`UI/Badge`,component:i,args:{children:`Nouveau`}},u={},d={args:{variant:`success`,children:`Validé`}},f={args:{variant:`warning`,children:`En attente`}},p={args:{variant:`danger`,children:`Refusé`}},u.parameters={...u.parameters,docs:{...u.parameters?.docs,source:{originalSource:`{}`,...u.parameters?.docs?.source}}},d.parameters={...d.parameters,docs:{...d.parameters?.docs,source:{originalSource:`{
+  args: {
+    variant: 'success',
+    children: 'Validé'
+  }
+}`,...d.parameters?.docs?.source}}},f.parameters={...f.parameters,docs:{...f.parameters?.docs,source:{originalSource:`{
+  args: {
+    variant: 'warning',
+    children: 'En attente'
+  }
+}`,...f.parameters?.docs?.source}}},p.parameters={...p.parameters,docs:{...p.parameters?.docs,source:{originalSource:`{
+  args: {
+    variant: 'danger',
+    children: 'Refusé'
+  }
+}`,...p.parameters?.docs?.source}}},m=[`Default`,`Success`,`Warning`,`Danger`]}))();export{p as Danger,u as Default,d as Success,f as Warning,m as __namedExportsOrder,l as default};

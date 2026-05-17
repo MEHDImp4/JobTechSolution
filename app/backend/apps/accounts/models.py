@@ -18,8 +18,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     prenom = models.CharField(max_length=100, verbose_name='Prénom')
     phone = models.CharField(max_length=20, blank=True, verbose_name='Téléphone')
     role = models.CharField(max_length=20, choices=ROLES, default='candidat', verbose_name='Rôle')
-    is_active = models.BooleanField(default=False, verbose_name='Actif')
-    is_email_verified = models.BooleanField(default=False, verbose_name='Email vérifié')
+    is_active = models.BooleanField(default=True, verbose_name='Actif')
+    is_email_verified = models.BooleanField(default=True, verbose_name='Email vérifié')
     is_staff = models.BooleanField(default=False, verbose_name='Staff')
     date_joined = models.DateTimeField(auto_now_add=True, verbose_name="Date d'inscription")
 

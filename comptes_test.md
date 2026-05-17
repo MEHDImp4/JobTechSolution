@@ -24,3 +24,5 @@ Ce document répertorie les comptes utilisateurs disponibles pour tester l'appli
 > [!TIP]
 > *   Les comptes créés via `seed_data` utilisent `password123`.
 > *   Les comptes créés via `generate_demo_data` utilisent `Password123!`.
+
+docker compose exec backend python manage.py seed_data

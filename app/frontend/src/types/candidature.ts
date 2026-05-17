@@ -2,6 +2,8 @@ export interface Candidature {
   id: number
   offre_id: number
   offre_titre: string
+  candidat_nom?: string
+  candidat_email?: string
   cv_file: string
   cv_file_original_name: string
   lettre_motivation: string

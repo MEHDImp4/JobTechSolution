@@ -1,4 +1,4 @@
-import { type InputHTMLAttributes, forwardRef, useState } from 'react'
+import { type InputHTMLAttributes, forwardRef, useId, useState } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -13,8 +13,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const [showPassword, setShowPassword] = useState(false)
     const isPassword = type === 'password'
     const inputType = isPassword ? (showPassword ? 'text' : 'password') : type
-    
-    const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-')
+    const generatedId = useId()
+    const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-') ?? generatedId
+    const messageId = `${inputId}-message`
 
     return (
       <div className="space-y-1.5">
@@ -41,16 +42,19 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               className
             )}
             {...props}
-            />
+            aria-invalid={error ? 'true' : 'false'}
+            aria-describedby={error || hint ? messageId : undefined}
+          />
 
-            {isPassword && (
+          {isPassword && (
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-0.5 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
-              tabIndex={-1}
               aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-            >              {showPassword ? (
+              aria-pressed={showPassword}
+            >
+              {showPassword ? (
                 <EyeOff className="h-4 w-4" />
               ) : (
                 <Eye className="h-4 w-4" />
@@ -58,8 +62,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             </button>
           )}
         </div>
-        {error && <p className="text-sm text-danger">{error}</p>}
-        {hint && !error && <p className="text-sm text-gray-500 dark:text-gray-400">{hint}</p>}
+        {error && <p id={messageId} className="text-sm text-danger">{error}</p>}
+        {hint && !error && <p id={messageId} className="text-sm text-gray-500 dark:text-gray-400">{hint}</p>}
       </div>
     )
   }

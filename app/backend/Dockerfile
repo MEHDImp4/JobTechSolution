@@ -22,7 +22,9 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 # Install python dependencies
 COPY requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --upgrade pip && pip install -r requirements.txt
+    pip install --upgrade pip && \
+    pip install -r requirements.txt && \
+    python -m spacy download fr_core_news_lg
 
 # Copy project files
 COPY . .

@@ -19,7 +19,9 @@ class NotificationLog(models.Model):
     ]
 
     recipient = models.CharField(max_length=255, verbose_name='Destinataire')
-    type = models.CharField(max_length=10, choices=TYPE_CHOICES, default='EMAIL', verbose_name='Type')
+    type = models.CharField(
+        max_length=10, choices=TYPE_CHOICES, default='EMAIL', verbose_name='Type'
+    )
     status = models.CharField(
         max_length=10, choices=STATUS_CHOICES, default='PENDING', verbose_name='Statut'
     )

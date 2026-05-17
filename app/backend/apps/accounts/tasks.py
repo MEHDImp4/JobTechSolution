@@ -28,7 +28,9 @@ def create_audit_log(user_id, action, model_name, ip_address, user_agent, endpoi
 def cleanup_expired_data():
     """Anonymise les données des candidats de plus de 24 mois."""
     from datetime import timedelta
+
     from django.utils import timezone
+
     from apps.accounts.models import User
 
     threshold = timezone.now() - timedelta(days=24 * 30)  # ~24 mois

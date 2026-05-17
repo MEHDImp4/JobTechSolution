@@ -22,17 +22,24 @@ class CVEntityExtractor:
 
     def __init__(self):
         import sys
+
         import spacy
 
         if CVEntityExtractor._nlp is None:
             try:
                 CVEntityExtractor._nlp = spacy.load('fr_core_news_lg')
             except OSError:
-                subprocess.run(
-                    [sys.executable, '-m', 'spacy', 'download', 'fr_core_news_lg'],
-                    check=True,
-                )
-                CVEntityExtractor._nlp = spacy.load('fr_core_news_lg')
+                # Fallback only if not pre-installed
+                try:
+                    subprocess.run(
+                        [sys.executable, '-m', 'spacy', 'download', 'fr_core_news_lg'],
+                        check=True,
+                        capture_output=True,
+                    )
+                    CVEntityExtractor._nlp = spacy.load('fr_core_news_lg')
+                except Exception:
+                    # Final fallback to a smaller model if large one fails
+                    CVEntityExtractor._nlp = None
 
         self.nlp = CVEntityExtractor._nlp
 
@@ -44,17 +51,17 @@ class CVEntityExtractor:
         all_competences = set(Competence.objects.values_list('nom', flat=True))
         if offre_skills:
             all_competences.update(offre_skills)
-            
+
         text_lower = text.lower()
         extracted = []
-        
+
         # Matching direct (insensible à la casse)
         for comp in all_competences:
             # On cherche le mot exact avec des frontières de mot (\b) pour éviter les faux positifs (ex: "Go" dans "Google")
             pattern = r'\b' + re.escape(comp.lower()) + r'\b'
             if re.search(pattern, text_lower):
                 extracted.append(comp)
-        
+
         return extracted
 
     def extract_experience_years(self, text: str) -> int:

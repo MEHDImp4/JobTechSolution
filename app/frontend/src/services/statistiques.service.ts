@@ -1,4 +1,4 @@
-import { apiGet } from './client'
+import { apiDownload, apiGet } from './client'
 import type { RHDashboardStats, KPIData } from '@/types/statistique'
 
 export const statistiquesService = {
@@ -9,4 +9,7 @@ export const statistiquesService = {
 
   exportCsvUrl: (periode: string = '30d') =>
     `/api/statistiques/export-csv?periode=${periode}`,
+
+  exportCsv: (periode: string = '30d') =>
+    apiDownload('statistiques/export-csv', { periode }),
 }

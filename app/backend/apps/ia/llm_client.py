@@ -45,18 +45,28 @@ _SENTIMENT_SYSTEM_PROMPT = (
     "Reponds uniquement par l'un des mots suivants en minuscules : 'positif', 'neutre', 'negatif'."
 )
 
+_NORMALIZE_SYSTEM_PROMPT = (
+    'Tu es un assistant RH specialise dans la normalisation de competences. '
+    "A partir d'une liste brute de competences, retourne uniquement une liste separee par des virgules "
+    'avec des libelles homogenes, dedoublonnes et concis. '
+    "Ne renvoie aucune introduction, aucune conclusion, uniquement la liste normalisee."
+)
+
+
 def _fallback_normalize(data):
     return data
 
 
 def _fallback_questions(data):
-    return '\n'.join([
-        'Parlez-moi de votre expérience la plus pertinente pour ce poste.',
-        "Qu'est-ce qui vous attire particulièrement dans notre entreprise ?",
-        'Pouvez-vous me décrire un défi technique complexe que vous avez résolu ?',
-        'Comment gérez-vous les priorités dans un environnement de travail dynamique ?',
-        "Quelles sont vos attentes en termes de collaboration et d'esprit d'équipe ?",
-    ])
+    return '\n'.join(
+        [
+            'Parlez-moi de votre expérience la plus pertinente pour ce poste.',
+            "Qu'est-ce qui vous attire particulièrement dans notre entreprise ?",
+            'Pouvez-vous me décrire un défi technique complexe que vous avez résolu ?',
+            'Comment gérez-vous les priorités dans un environnement de travail dynamique ?',
+            "Quelles sont vos attentes en termes de collaboration et d'esprit d'équipe ?",
+        ]
+    )
 
 
 def _fallback_sentiment(data):
@@ -75,6 +85,7 @@ def _fallback_summary_local(data):
     if len(data) > 300:
         return f'[Résumé local] {data[:300]}...'
     return f'[Résumé local] {data}'
+
 
 _RECOMMENDATION_SYSTEM_PROMPT = (
     'Tu es un expert RH de haut niveau. '
@@ -268,9 +279,7 @@ class LLMClient:
         if not self.api_key:
             return f'[Résumé local] Entretien réalisé. Notes : {clean_notes[:200]}...'
 
-        return self._call_with_retry(
-            clean_notes, _SUMMARY_SYSTEM_PROMPT, _fallback_summary_local
-        )
+        return self._call_with_retry(clean_notes, _SUMMARY_SYSTEM_PROMPT, _fallback_summary_local)
 
     def test_connection(self) -> str:
         """Vérifie la connexion à l'API LLM."""

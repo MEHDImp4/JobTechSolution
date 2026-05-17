@@ -144,6 +144,7 @@ class EvaluationPDFGenerator:
     def _radar_chart(self, labels, values) -> BytesIO:
         """Génère le graphique radar Matplotlib."""
         import matplotlib
+
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
         import numpy as np

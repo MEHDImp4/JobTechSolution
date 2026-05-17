@@ -17,9 +17,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="notificationlog",
             name="attempts",
-            field=models.PositiveSmallIntegerField(
-                default=1, verbose_name="Tentatives"
-            ),
+            field=models.PositiveSmallIntegerField(default=1, verbose_name="Tentatives"),
         ),
         migrations.AlterField(
             model_name="notificationlog",

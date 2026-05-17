@@ -51,9 +51,7 @@ class CVTextExtractor:
             import pytesseract
             from pdf2image import convert_from_path
         except ImportError:
-            raise CVExtractionError(
-                'PDF non lisible (scan?) et OCR non configuré.'
-            )
+            raise CVExtractionError('PDF non lisible (scan?) et OCR non configuré.')
 
         try:
             images = convert_from_path(str(path))

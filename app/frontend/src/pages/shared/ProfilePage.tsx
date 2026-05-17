@@ -11,7 +11,6 @@ import { authService } from '@/services/auth.service'
 import { ApiError } from '@/services/client'
 import { ROLES, type UserRole } from '@/lib/constants'
 import { formatDate } from '@/lib/utils'
-import PushSubscriptionManager from '@/components/pwa/PushSubscriptionManager'
 
 const profileSchema = z.object({
   nom: z.string().min(2),
@@ -118,13 +117,6 @@ export default function ProfilePage() {
           </div>
         </form>
       </div>
-
-      {/* Notifications Settings */}
-      <div className="bg-white dark:bg-slate-900/40 dark:backdrop-blur-xl rounded-xl border border-gray-200 dark:border-white/10 shadow-card dark:shadow-glow-blue/5 p-6 transition-colors">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Préférences de notification</h2>
-        <PushSubscriptionManager />
-      </div>
-
       {/* Password Change */}
       <div className="bg-white dark:bg-slate-900/40 dark:backdrop-blur-xl rounded-xl border border-gray-200 dark:border-white/10 shadow-card dark:shadow-glow-blue/5 p-6 transition-colors">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Changer le mot de passe</h2>

@@ -2,8 +2,7 @@
 URL patterns for the offres app — Phase 2 Plan 1.
 """
 
-from django.urls import path, include
-
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from .views import (
@@ -16,7 +15,7 @@ from .views import (
     OffreSearchView,
     OffreUpdateView,
 )
-from .viewsets import OffreViewSet, CompetenceViewSet
+from .viewsets import CompetenceViewSet, OffreViewSet
 
 app_name = 'offres'
 

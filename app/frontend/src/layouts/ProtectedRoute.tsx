@@ -24,7 +24,7 @@ export function ProtectedRoute({ children, roles }: ProtectedRouteProps) {
   }
 
   if (roles && !roles.includes(user.role as UserRole)) {
-    return <Navigate to="/dashboard" replace />
+    return <Navigate to={user.role === 'candidat' ? '/offres' : '/dashboard'} replace />
   }
 
   return <>{children}</>

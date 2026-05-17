@@ -31,7 +31,7 @@ export default function RegisterPage() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, setError, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
   })
 
@@ -41,7 +41,16 @@ export default function RegisterPage() {
       const res = await authService.register(data)
       toast('success', res.message)
       navigate('/connexion')
-    } catch (err) {
+    } catch (err: any) {
+      if (err instanceof ApiError && err.data && typeof err.data === 'object') {
+        // Map backend errors to form fields
+        Object.entries(err.data).forEach(([key, value]) => {
+          const message = Array.isArray(value) ? value[0] : value
+          if (['nom', 'prenom', 'email', 'password', 'password_confirm'].includes(key)) {
+            setError(key as any, { type: 'manual', message: message as string })
+          }
+        })
+      }
       const message = err instanceof ApiError ? err.message : 'Erreur lors de l\'inscription'
       toast('error', message)
     } finally {
@@ -62,13 +71,13 @@ export default function RegisterPage() {
         <div className="grid grid-cols-2 gap-4">
           <Input
             label="Nom"
-            placeholder="Diouri"
+            placeholder="Votre nom"
             error={errors.nom?.message}
             {...register('nom')}
           />
           <Input
             label="Prénom"
-            placeholder="Mehdi"
+            placeholder="Votre prénom"
             error={errors.prenom?.message}
             {...register('prenom')}
           />

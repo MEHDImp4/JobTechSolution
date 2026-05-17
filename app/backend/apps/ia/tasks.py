@@ -5,8 +5,8 @@ from celery import shared_task
 @shared_task(bind=True, max_retries=3, queue='ia_queue')
 def analyze_cv(self, candidature_id):
     from apps.candidatures.models import Candidature
-    from apps.ia.service import extract_cv_text, extract_competences, normalize_competences
     from apps.ia.models import CVData
+    from apps.ia.service import extract_competences, extract_cv_text, normalize_competences
 
     try:
         candidature = Candidature.objects.get(pk=candidature_id)
@@ -14,16 +14,20 @@ def analyze_cv(self, candidature_id):
         candidature.save(update_fields=['ia_status'])
 
         texte = extract_cv_text(candidature.cv_file.path)
-        competences = extract_competences(
-            texte,
-            list(candidature.offre.competences.values_list('nom', flat=True)))
+        competences = extract_competences(texte, candidature.offre.competences)
         competences = normalize_competences(competences)
+
+        # Extraire l'experience
+        from apps.ia.service import extract_experience
+
+        experience = extract_experience(texte)
 
         CVData.objects.update_or_create(
             candidature=candidature,
             defaults={
                 'texte_brut': texte,
                 'competences_extraites': competences,
+                'experience_annees': experience,
                 'extraction_error': '',
             },
         )
@@ -44,8 +48,8 @@ def analyze_cv(self, candidature_id):
 @shared_task(bind=True, max_retries=3, queue='ia_queue')
 def calculate_score(self, candidature_id):
     from apps.candidatures.models import Candidature
-    from apps.ia.service import compute_score
     from apps.ia.models import ScoreDetail
+    from apps.ia.service import compute_score
 
     try:
         candidature = Candidature.objects.select_related('offre', 'cv_data').get(pk=candidature_id)
@@ -73,8 +77,8 @@ def calculate_score(self, candidature_id):
 
 @shared_task(bind=True, max_retries=3, queue='ia_queue')
 def generate_cv_summary(self, candidature_id):
-    from apps.ia.service import generate_summary
     from apps.ia.models import CVData
+    from apps.ia.service import generate_summary
 
     try:
         cv_data = CVData.objects.get(candidature_id=candidature_id)

@@ -26,6 +26,10 @@ export default function UsersPage() {
   const [filterRole, setFilterRole] = useState('')
   const [importModal, setImportModal] = useState(false)
 
+  function getDisplayName(user: User) {
+    return user.get_full_name || user.email
+  }
+
   useEffect(() => {
     loadUsers()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -98,11 +102,17 @@ export default function UsersPage() {
           className="flex-1 flex gap-2"
         >
           <div className="flex-1">
-            <Input placeholder="Rechercher par nom ou e-mail..." value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input
+              aria-label="Rechercher un utilisateur"
+              placeholder="Rechercher par nom ou e-mail..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
           <Button type="submit" icon={<Search className="h-4 w-4" />}>Rechercher</Button>
         </form>
         <select
+          aria-label="Filtrer par rôle"
           value={filterRole}
           onChange={(e) => {
             setFilterRole(e.target.value)
@@ -141,7 +151,7 @@ export default function UsersPage() {
               <tbody className="divide-y divide-gray-100 dark:divide-white/5">
                 {users.map((u) => (
                   <tr key={u.id} className="hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors">
-                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{u.get_full_name}</td>
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{getDisplayName(u)}</td>
                     <td className="px-4 py-3 text-gray-600 dark:text-slate-400">{u.email}</td>
                     <td className="px-4 py-3">
                       <StatusBadge className="bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300 border-none">
@@ -159,6 +169,7 @@ export default function UsersPage() {
                         onClick={() => handleToggleActive(u.id)}
                         className="p-1.5 rounded-lg text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/30 transition-colors cursor-pointer"
                         title={u.is_active ? 'Désactiver' : 'Activer'}
+                        aria-label={u.is_active ? `Désactiver ${getDisplayName(u)}` : `Activer ${getDisplayName(u)}`}
                       >
                         <ToggleRight className="h-4 w-4" />
                       </button>

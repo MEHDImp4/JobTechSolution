@@ -1,12 +1,14 @@
 # Tache pour generer le PDF d'une evaluation
-from celery import shared_task
 from datetime import date
+
+from celery import shared_task
 from django.core.files.base import ContentFile
 
 
 @shared_task(bind=True, max_retries=3, queue='pdf_queue')
 def generate_evaluation_pdf(self, evaluation_id):
     from apps.evaluations.models import Evaluation
+
     from .pdf_generator import EvaluationPDFGenerator
 
     try:
@@ -23,4 +25,4 @@ def generate_evaluation_pdf(self, evaluation_id):
         filename = f'evaluation_{evaluation_id}_{date.today().strftime("%Y%m%d")}.pdf'
         eval_obj.pdf_file.save(filename, ContentFile(pdf_buffer.read()), save=True)
     except Exception as exc:
-        raise self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))
+        raise self.retry(exc=exc, countdown=60 * (2**self.request.retries))
