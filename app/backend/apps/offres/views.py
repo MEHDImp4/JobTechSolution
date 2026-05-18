@@ -1,4 +1,5 @@
 from rest_framework import permissions, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from apps.accounts.models import User
@@ -23,14 +24,31 @@ class OffreViewSet(viewsets.ModelViewSet):
         # Un candidat ne voit que les offres ouvertes.
         queryset = super().get_queryset()
         user = self.request.user
+        
+        statut = self.request.query_params.get('statut')
+        if statut == 'publiee':
+            statut = 'ouverte'
+            
+        type_contrat = self.request.query_params.get('type_contrat')
+        search_query = self.request.query_params.get('q')
+
         if not user.is_authenticated or user.role == User.ROLE_CANDIDAT:
-            return queryset.filter(statut='ouverte')
+            queryset = queryset.filter(statut='ouverte')
+        elif statut:
+            queryset = queryset.filter(statut=statut)
+            
+        if type_contrat:
+            queryset = queryset.filter(type_contrat=type_contrat)
+            
+        if search_query:
+            queryset = queryset.filter(titre__icontains=search_query) | queryset.filter(description__icontains=search_query)
+            
         return queryset
 
     def create(self, request, *args, **kwargs):
         # Cree une offre.
         if request.user.role not in ALLOWED_JOB_ROLES:
-            return Response({'detail': 'Acces refuse.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'message': 'Acces refuse.'}, status=status.HTTP_403_FORBIDDEN)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(cree_par=request.user)
@@ -39,11 +57,25 @@ class OffreViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         # Modifie une offre.
         if request.user.role not in ALLOWED_JOB_ROLES:
-            return Response({'detail': 'Acces refuse.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'message': 'Acces refuse.'}, status=status.HTTP_403_FORBIDDEN)
         return super().update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
         # Supprime une offre.
         if request.user.role not in ALLOWED_JOB_ROLES:
-            return Response({'detail': 'Acces refuse.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'message': 'Acces refuse.'}, status=status.HTTP_403_FORBIDDEN)
         return super().destroy(request, *args, **kwargs)
+
+    @action(detail=True, methods=['post'], url_path='toggle-status')
+    def toggle_status(self, request, pk=None):
+        # Bascule rapidement le statut d'une offre pour l'interface RH.
+        if request.user.role not in ALLOWED_JOB_ROLES:
+            return Response({'message': 'Acces refuse.'}, status=status.HTTP_403_FORBIDDEN)
+
+        offre = self.get_object()
+        if offre.statut == 'ouverte':
+            offre.statut = 'cloturee'
+        else:
+            offre.statut = 'ouverte'
+        offre.save(update_fields=['statut'])
+        return Response(self.get_serializer(offre).data)

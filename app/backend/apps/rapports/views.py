@@ -23,9 +23,23 @@ def build_stats():
         for item in Candidature.objects.values('statut').annotate(total=Count('id'))
     }
     moyenne_score = Candidature.objects.aggregate(score=Avg('matching_score'))['score'] or 0
+    
+    # Simple top candidates for demo
+    top_candidats = [
+        {
+            'nom': c.candidat.full_name,
+            'offre': c.offre.titre,
+            'score': c.matching_score
+        }
+        for c in Candidature.objects.select_related('candidat', 'offre').order_by('-matching_score')[:5]
+    ]
+
     return {
         'total_offres': Offre.objects.count(),
         'total_candidatures': Candidature.objects.count(),
+        'total_entretiens': Entretien.objects.count(),
+        'recrutements_reussis': Candidature.objects.filter(statut='retenu').count(),
+        'top_candidats': top_candidats,
         'candidatures_par_statut': candidatures_par_statut,
         'entretiens_planifies': Entretien.objects.filter(statut='planifie').count(),
         'entretiens_termines': Entretien.objects.filter(statut='termine').count(),
@@ -40,6 +54,57 @@ class StatsView(APIView):
         if request.user.role not in ALLOWED_REPORT_ROLES:
             return Response({'detail': 'Acces refuse.'}, status=403)
         return Response(build_stats())
+
+
+class KPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        if request.user.role not in ALLOWED_REPORT_ROLES:
+            return Response({'detail': 'Acces refuse.'}, status=403)
+            
+        # Dummy but structured data for demo
+        funnel = {
+            'total': Offre.objects.count(),
+            'preselectionnes': Candidature.objects.filter(statut='preselectionne').count(),
+            'entretiens': Entretien.objects.count(),
+            'retenus': Candidature.objects.filter(statut='retenu').count(),
+            'taux': 15.5
+        }
+        
+        score_stats = {
+            'avg': 75.5,
+            'max': 95.0,
+            'min': 45.0
+        }
+        
+        return Response({
+            'funnel': funnel,
+            'delai_moyen': 12,
+            'score_stats': score_stats,
+            'top_competences': [('Python', 85), ('Django', 70), ('React', 45)]
+        })
+
+
+class ExportCsvView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        if request.user.role not in ALLOWED_REPORT_ROLES:
+            return Response({'detail': 'Acces refuse.'}, status=403)
+
+        import csv
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(['Indicateur', 'Valeur'])
+        stats = build_stats()
+        for key, value in stats.items():
+            if not isinstance(value, (list, dict)):
+                writer.writerow([key, value])
+
+        response = HttpResponse(output.getvalue(), content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="jobtech-stats.csv"'
+        return response
 
 
 class ExportPdfView(APIView):

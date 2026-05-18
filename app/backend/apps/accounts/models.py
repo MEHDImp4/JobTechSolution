@@ -34,3 +34,22 @@ class User(AbstractUser):
     @property
     def full_name(self):
         return f'{self.prenom} {self.nom}'.strip()
+
+
+class AuditLog(models.Model):
+    timestamp = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='audit_logs')
+    user_email = models.EmailField()
+    action = models.CharField(max_length=255)
+    model_name = models.CharField(max_length=100, blank=True)
+    object_id = models.CharField(max_length=100, blank=True)
+    data_before = models.JSONField(null=True, blank=True)
+    data_after = models.JSONField(null=True, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    endpoint = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f'{self.timestamp} - {self.user_email} - {self.action}'

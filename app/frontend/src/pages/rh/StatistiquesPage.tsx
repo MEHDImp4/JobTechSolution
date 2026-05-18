@@ -158,7 +158,7 @@ export default function StatistiquesPage() {
         <div className="bg-white dark:bg-slate-900/40 dark:backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-white/10 shadow-card dark:shadow-glow-blue p-5 transition-all duration-300">
           <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Entonnoir de recrutement</h3>
           <div className="h-[280px] sm:h-[320px] w-full min-w-0">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height={320} minWidth={0}>
               <BarChart data={funnelData} layout="vertical" margin={{ left: 0, right: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 10, fill: chartTheme.axis }} />
@@ -195,7 +195,7 @@ export default function StatistiquesPage() {
             <p className="text-sm text-gray-500 dark:text-slate-400 py-8 text-center">Pas encore de données</p>
           ) : (
             <div className="h-[280px] sm:h-[320px] w-full min-w-0">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height={320} minWidth={0}>
                 <BarChart data={competencesData.slice(0, 6)} margin={{ bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} vertical={false} />
                   <XAxis 

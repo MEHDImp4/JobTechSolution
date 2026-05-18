@@ -1,23 +1,38 @@
+export type CandidatureStatut =
+  | 'en_attente'
+  | 'en_cours'
+  | 'preselectionne'
+  | 'rejete'
+  | 'accepte'
+
+export interface AIExtractedData {
+  email?: string
+  telephone?: string
+  competences_detectees?: string[]
+  total_competences_requises?: number
+}
+
 export interface Candidature {
   id: number
-  offre_id: number
+  offre: number
   offre_titre: string
-  candidat_nom?: string
-  candidat_email?: string
+  candidat?: number
+  candidat_username?: string
   cv_file: string
-  cv_file_original_name: string
-  lettre_motivation: string
+  telephone: string
   experience_annees: number | null
+  lettre_motivation: string
   linkedin_url: string
-  statut: 'recue' | 'analyse_ia' | 'examen_rh' | 'entretien' | 'retenu' | 'refuse'
-  score_ia: number | null
-  ia_status: 'pending' | 'processing' | 'done' | 'error'
-  date_candidature: string
-  date_maj: string | null
+  statut: CandidatureStatut
+  matching_score: number | null
+  cv_text: string
+  ai_summary: string
+  ai_extracted_data: AIExtractedData | null
+  date_soumission: string
 }
 
 export interface CandidatureStatus {
-  ia_status: string | null
-  score_ia: number | null
-  statut: string
+  statut: CandidatureStatut
+  matching_score: number | null
+  ai_summary: string
 }

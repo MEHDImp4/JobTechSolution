@@ -1,7 +1,6 @@
 from django.core.management.base import BaseCommand
 
 from apps.accounts.models import User
-from apps.candidatures.ai import build_simple_ai_result
 from apps.candidatures.models import Candidature
 from apps.entretiens.models import Entretien
 from apps.offres.models import Offre
@@ -11,93 +10,125 @@ class Command(BaseCommand):
     help = 'Cree un jeu de donnees minimal pour tester le backend.'
 
     def handle(self, *args, **options):
-        admin, _ = User.objects.get_or_create(
-            username='admin',
-            defaults={
-                'email': 'admin@jobtech.local',
-                'nom': 'Admin',
-                'prenom': 'JobTech',
-                'role': User.ROLE_ADMIN,
-                'is_staff': True,
-                'is_superuser': True,
-            },
-        )
+        # Repart d'une base propre pour la partie candidature et entretien.
+        Entretien.objects.all().delete()
+        Candidature.objects.all().delete()
+
+        admin, _ = User.objects.get_or_create(username='admin')
+        admin.email = 'admin@jobtech.com'
+        admin.nom = 'Admin'
+        admin.prenom = 'JobTech'
         admin.set_password('password123')
         admin.is_staff = True
         admin.is_superuser = True
         admin.role = User.ROLE_ADMIN
         admin.save()
 
-        rh, _ = User.objects.get_or_create(
-            username='rh',
-            defaults={
-                'email': 'rh@jobtech.local',
-                'nom': 'RH',
-                'prenom': 'JobTech',
-                'role': User.ROLE_RH,
-                'is_staff': True,
-            },
-        )
+        rh, _ = User.objects.get_or_create(username='rh')
+        rh.email = 'rh@jobtech.com'
+        rh.nom = 'RH'
+        rh.prenom = 'JobTech'
         rh.set_password('password123')
         rh.is_staff = True
         rh.role = User.ROLE_RH
         rh.save()
 
-        candidat, _ = User.objects.get_or_create(
-            username='candidat',
-            defaults={
-                'email': 'candidat@jobtech.local',
-                'nom': 'Candidat',
-                'prenom': 'Test',
-                'role': User.ROLE_CANDIDAT,
-            },
-        )
+        recruteur, _ = User.objects.get_or_create(username='recruteur')
+        recruteur.email = 'recruteur@jobtech.com'
+        recruteur.nom = 'Recruteur'
+        recruteur.prenom = 'JobTech'
+        recruteur.set_password('password123')
+        recruteur.is_staff = True
+        recruteur.role = User.ROLE_RECRUTEUR
+        recruteur.save()
+
+        candidat, _ = User.objects.get_or_create(username='candidat')
+        candidat.email = 'candidat@jobtech.com'
+        candidat.nom = 'Candidat'
+        candidat.prenom = 'Test'
         candidat.set_password('password123')
         candidat.role = User.ROLE_CANDIDAT
         candidat.save()
 
-        offre, _ = Offre.objects.get_or_create(
-            titre='Developpeur Django Junior',
-            defaults={
-                'description': 'Participation au developpement backend Django.',
+        offres = [
+            {
+                'titre': 'Developpeur Django Junior',
+                'description': 'Participation au developpement backend Django et a la maintenance des API.',
                 'competences_requises': 'django, python, rest',
                 'experience_demandee': 1,
                 'type_contrat': 'CDI',
                 'salaire_estime': 12000,
-                'statut': 'ouverte',
-                'cree_par': rh,
             },
-        )
-
-        candidature, _ = Candidature.objects.get_or_create(
-            offre=offre,
-            candidat=candidat,
-            defaults={
-                'cv_file': 'cvs/demo.pdf',
-                'message': 'Experience django python rest',
-                'statut': 'preselectionne',
+            {
+                'titre': 'Frontend React Junior',
+                'description': 'Creation et integration des interfaces React pour la plateforme de recrutement.',
+                'competences_requises': 'react, typescript, css',
+                'experience_demandee': 1,
+                'type_contrat': 'CDI',
+                'salaire_estime': 11000,
             },
-        )
-        ai_result = build_simple_ai_result(offre, message=candidature.message)
-        candidature.matching_score = ai_result['score']
-        candidature.ai_summary = ai_result['summary']
-        candidature.ai_extracted_data = ai_result['extracted_data']
-        candidature.save(update_fields=['matching_score', 'ai_summary', 'ai_extracted_data'])
-
-        Entretien.objects.get_or_create(
-            candidature=candidature,
-            evaluateur=rh,
-            defaults={
-                'date_heure': '2026-05-20T10:00:00Z',
-                'statut': 'planifie',
-                'notes': 'Entretien de demonstration',
-                'commentaires': 'Profil prometteur',
-                'recommandation': 'A retenir',
-                'score_communication': 80,
-                'score_competences': 85,
-                'score_motivation': 90,
-                'score_global': 85,
+            {
+                'titre': 'Data Analyst RH',
+                'description': 'Analyse simple des candidatures, tableaux de bord et suivi des statistiques RH.',
+                'competences_requises': 'excel, sql, reporting',
+                'experience_demandee': 2,
+                'type_contrat': 'CDD',
+                'salaire_estime': 13000,
             },
-        )
+            {
+                'titre': 'Charge de Recrutement',
+                'description': 'Gestion des offres, tri des candidatures et planification des entretiens.',
+                'competences_requises': 'recrutement, communication, organisation',
+                'experience_demandee': 2,
+                'type_contrat': 'CDI',
+                'salaire_estime': 10000,
+            },
+            {
+                'titre': 'DevOps Junior',
+                'description': 'Suivi du deploiement, maintenance des serveurs et support des outils Docker.',
+                'competences_requises': 'docker, linux, ci/cd',
+                'experience_demandee': 1,
+                'type_contrat': 'CDI',
+                'salaire_estime': 13500,
+            },
+            {
+                'titre': 'QA Tester',
+                'description': 'Verification des fonctionnalites, redaction des cas de test et suivi des anomalies.',
+                'competences_requises': 'tests, qualite, documentation',
+                'experience_demandee': 1,
+                'type_contrat': 'Stage',
+                'salaire_estime': 5000,
+            },
+            {
+                'titre': 'Administrateur Systeme',
+                'description': 'Gestion des postes, comptes utilisateurs et securite basique du systeme.',
+                'competences_requises': 'reseau, windows, support',
+                'experience_demandee': 2,
+                'type_contrat': 'CDI',
+                'salaire_estime': 12500,
+            },
+            {
+                'titre': 'Business Analyst Junior',
+                'description': 'Collecte des besoins, suivi des processus et preparation des rapports de synthese.',
+                'competences_requises': 'analyse, communication, gestion',
+                'experience_demandee': 1,
+                'type_contrat': 'CDD',
+                'salaire_estime': 11500,
+            },
+        ]
 
-        self.stdout.write(self.style.SUCCESS('Donnees de seed creees ou mises a jour.'))
+        for donnees_offre in offres:
+            Offre.objects.update_or_create(
+                titre=donnees_offre['titre'],
+                defaults={
+                    'description': donnees_offre['description'],
+                    'competences_requises': donnees_offre['competences_requises'],
+                    'experience_demandee': donnees_offre['experience_demandee'],
+                    'type_contrat': donnees_offre['type_contrat'],
+                    'salaire_estime': donnees_offre['salaire_estime'],
+                    'statut': 'ouverte',
+                    'cree_par': recruteur,
+                },
+            )
+
+        self.stdout.write(self.style.SUCCESS('Seed termine : offres creees et candidatures supprimees.'))

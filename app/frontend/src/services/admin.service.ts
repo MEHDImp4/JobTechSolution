@@ -6,6 +6,18 @@ export const adminService = {
   listUsers: (params?: { role?: string; search?: string; page?: string; page_size?: string }) =>
     apiGet<PaginatedResponse<User>>('users', params as Record<string, string>),
 
+  createUser: (data: {
+    email: string
+    nom: string
+    prenom: string
+    role: string
+    password: string
+    username?: string
+  }) => apiPost<User>('users', {
+    ...data,
+    role: data.role.toUpperCase(),
+  }),
+
   updateUser: (id: number, data: { role?: string; is_active?: boolean }) =>
     apiPatch<User>(`users/${id}`, data),
 

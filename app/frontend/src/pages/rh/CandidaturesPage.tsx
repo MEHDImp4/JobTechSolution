@@ -8,8 +8,8 @@ import { Modal } from '@/components/ui/Modal'
 import { PaginationControls } from '@/components/ui/PaginationControls'
 import { candidaturesService } from '@/services/candidatures.service'
 import { offresService } from '@/services/offres.service'
-import { CANDIDATURE_STATUTS, IA_STATUS } from '@/lib/constants'
-import { formatDate, formatScore, getScoreColor, cn } from '@/lib/utils'
+import { CANDIDATURE_STATUTS } from '@/lib/constants'
+import { formatDate, formatScore, getScoreColor, cn, normalizeBackendFileUrl } from '@/lib/utils'
 import type { Candidature } from '@/types/candidature'
 import type { Offre } from '@/types/offre'
 import { KanbanBoard } from '@/components/rh/KanbanBoard'
@@ -43,7 +43,7 @@ export default function CandidaturesPage() {
         setOffresHasNext(Boolean(response.next))
         setOffresHasPrevious(Boolean(response.previous))
         if (data.length > 0 && (!selectedOffre || !data.some((offre) => offre.id === selectedOffre))) {
-          const firstActive = data.find(o => o.statut === 'publiee') || data[0]
+          const firstActive = data.find(o => o.statut === 'ouverte' || o.statut === 'en_cours') || data[0]
           if (firstActive) {
             setSelectedOffre(firstActive.id)
           }
@@ -60,7 +60,7 @@ export default function CandidaturesPage() {
   const filteredOffres = useMemo(() => {
     return offres.filter(o => {
       const matchesSearch = o.titre.toLowerCase().includes(offreSearch.toLowerCase())
-      const matchesStatus = showClosed ? true : o.statut === 'publiee'
+      const matchesStatus = showClosed ? true : o.statut !== 'cloturee'
       return matchesSearch && matchesStatus
     })
   }, [offres, offreSearch, showClosed])
@@ -342,14 +342,14 @@ function CandidatureList({ offreId, viewMode }: { offreId: number, viewMode: 'ta
           <div className="sticky top-0 z-20 flex items-center justify-between bg-brand-600 text-white px-4 py-3 rounded-t-xl animate-in slide-in-from-top duration-300">
             <span className="text-sm font-medium">{selectedIds.size} sélectionné(s)</span>
             <div className="flex gap-2">
-              <Button size="sm" variant="ghost" className="text-white hover:bg-white/10" onClick={() => handleBulkStatusChange('examen_rh')}>
-                A examiner
+              <Button size="sm" variant="ghost" className="text-white hover:bg-white/10" onClick={() => handleBulkStatusChange('en_cours')}>
+                En cours
               </Button>
-              <Button size="sm" variant="ghost" className="text-white hover:bg-white/10" onClick={() => handleBulkStatusChange('entretien')}>
-                Entretien
+              <Button size="sm" variant="ghost" className="text-white hover:bg-white/10" onClick={() => handleBulkStatusChange('preselectionne')}>
+                Présélection
               </Button>
-              <Button size="sm" variant="ghost" className="text-white hover:bg-white/10" onClick={() => handleBulkStatusChange('refuse')}>
-                Refuser
+              <Button size="sm" variant="ghost" className="text-white hover:bg-white/10" onClick={() => handleBulkStatusChange('rejete')}>
+                Rejeter
               </Button>
             </div>
           </div>
@@ -371,7 +371,7 @@ function CandidatureList({ offreId, viewMode }: { offreId: number, viewMode: 'ta
                   </th>
                   <th className="text-left px-4 py-3 font-medium text-gray-500 dark:text-slate-400">Candidat</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-500 dark:text-slate-400">Score IA</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-500 dark:text-slate-400">Statut IA</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-500 dark:text-slate-400">Analyse CV</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-500 dark:text-slate-400">Statut</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-500 dark:text-slate-400">Date</th>
                   <th className="text-right px-4 py-3 font-medium text-gray-500 dark:text-slate-400">Actions</th>
@@ -380,7 +380,7 @@ function CandidatureList({ offreId, viewMode }: { offreId: number, viewMode: 'ta
               <tbody className="divide-y divide-gray-100 dark:divide-white/5">
                 {candidatures.map((c) => {
                   const statusConf = CANDIDATURE_STATUTS[c.statut] ?? { label: c.statut, color: 'bg-gray-100 text-gray-700' }
-                  const iaConf = IA_STATUS[c.ia_status] ?? { label: c.ia_status, color: 'bg-gray-100 text-gray-600' }
+                  const analysisLabel = c.ai_summary || 'Analyse disponible'
 
                   return (
                     <tr key={c.id} className={`border-b border-gray-50 dark:border-white/5 hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors ${selectedIds.has(c.id) ? 'bg-brand-50/30' : ''}`}>
@@ -393,29 +393,29 @@ function CandidatureList({ offreId, viewMode }: { offreId: number, viewMode: 'ta
                         />
                       </td>
                       <td className="px-4 py-3">
-                        <p className="font-medium text-gray-900 dark:text-white">{c.candidat_nom}</p>
-                        <p className="text-xs text-gray-500 dark:text-slate-400">{c.candidat_email}</p>
+                        <p className="font-medium text-gray-900 dark:text-white">{c.candidat_username || 'Candidat'}</p>
+                        <p className="text-xs text-gray-500 dark:text-slate-400">{c.telephone || 'Téléphone non renseigné'}</p>
                       </td>
                       <td className="px-4 py-3">
                         <button 
                           onClick={() => setIaModal(c)}
-                          className={`text-sm font-bold hover:underline cursor-pointer ${getScoreColor(c.score_ia)}`}
+                          className={`text-sm font-bold hover:underline cursor-pointer ${getScoreColor(c.matching_score)}`}
                         >
-                          {formatScore(c.score_ia)}
+                          {formatScore(c.matching_score)}
                         </button>
                       </td>
                       <td className="px-4 py-3">
-                        <StatusBadge className={iaConf.color}>{iaConf.label}</StatusBadge>
+                        <span className="text-xs text-gray-500 dark:text-slate-400">{analysisLabel}</span>
                       </td>
                       <td className="px-4 py-3">
                         <StatusBadge className={statusConf.color}>{statusConf.label}</StatusBadge>
                       </td>
-                      <td className="px-4 py-3 text-gray-500 dark:text-slate-400 text-xs">{formatDate(c.date_candidature)}</td>
+                      <td className="px-4 py-3 text-gray-500 dark:text-slate-400 text-xs">{formatDate(c.date_soumission)}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-2">
                           {c.cv_file && (
                             <a 
-                              href={c.cv_file} 
+                              href={normalizeBackendFileUrl(c.cv_file)} 
                               target="_blank" 
                               rel="noopener noreferrer" 
                               className="p-1.5 rounded-lg text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors" 
@@ -440,7 +440,7 @@ function CandidatureList({ offreId, viewMode }: { offreId: number, viewMode: 'ta
           <div className="md:hidden divide-y divide-gray-100 dark:divide-white/5">
             {candidatures.map((c) => {
               const statusConf = CANDIDATURE_STATUTS[c.statut] ?? { label: c.statut, color: 'bg-gray-100 text-gray-700' }
-              const iaConf = IA_STATUS[c.ia_status] ?? { label: c.ia_status, color: 'bg-gray-100 text-gray-600' }
+              const analysisLabel = c.ai_summary || 'Analyse disponible'
 
               return (
                 <div key={c.id} className={`p-4 space-y-3 transition-colors ${selectedIds.has(c.id) ? 'bg-brand-50/30' : ''}`}>
@@ -454,15 +454,15 @@ function CandidatureList({ offreId, viewMode }: { offreId: number, viewMode: 'ta
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start">
                         <div>
-                          <p className="font-medium text-gray-900 dark:text-white truncate">{c.candidat_nom}</p>
-                          <p className="text-xs text-gray-500 dark:text-slate-400">{c.candidat_email}</p>
+                          <p className="font-medium text-gray-900 dark:text-white truncate">{c.candidat_username || 'Candidat'}</p>
+                          <p className="text-xs text-gray-500 dark:text-slate-400">{c.telephone || 'Téléphone non renseigné'}</p>
                         </div>
                         <div className="text-right">
                           <button 
                             onClick={() => setIaModal(c)}
-                            className={`text-sm font-bold block hover:underline cursor-pointer ${getScoreColor(c.score_ia)}`}
+                            className={`text-sm font-bold block hover:underline cursor-pointer ${getScoreColor(c.matching_score)}`}
                           >
-                            {formatScore(c.score_ia)}
+                            {formatScore(c.matching_score)}
                           </button>
                         </div>
                       </div>
@@ -470,16 +470,16 @@ function CandidatureList({ offreId, viewMode }: { offreId: number, viewMode: 'ta
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    <StatusBadge className={iaConf.color}>{iaConf.label}</StatusBadge>
+                    <StatusBadge className="bg-gray-100 text-gray-700">{analysisLabel}</StatusBadge>
                     <StatusBadge className={statusConf.color}>{statusConf.label}</StatusBadge>
                   </div>
 
                   <div className="flex items-center justify-between pt-2">
-                    <span className="text-xs text-gray-500 dark:text-slate-400">{formatDate(c.date_candidature)}</span>
+                    <span className="text-xs text-gray-500 dark:text-slate-400">{formatDate(c.date_soumission)}</span>
                     <div className="flex items-center gap-2">
                       {c.cv_file && (
                         <a 
-                          href={c.cv_file} 
+                          href={normalizeBackendFileUrl(c.cv_file)} 
                           target="_blank" 
                           rel="noopener noreferrer" 
                           className="p-2 rounded-lg text-gray-400 hover:text-brand-600 bg-gray-50 dark:bg-white/5 transition-colors flex items-center justify-center h-8 w-8" 
@@ -515,7 +515,7 @@ function CandidatureList({ offreId, viewMode }: { offreId: number, viewMode: 'ta
           <Modal open={!!statusModal} onClose={() => setStatusModal(null)} title="Changer le statut">
             <div className="space-y-3">
               <p className="text-sm text-gray-500">
-                Action sur la candidature de <strong>{statusModal.candidat_nom}</strong>
+                Action sur la candidature de <strong>{statusModal.candidat_username || 'Candidat'}</strong>
               </p>
             <div className="grid grid-cols-2 gap-2">
               {Object.entries(CANDIDATURE_STATUTS).map(([key, config]) => (
@@ -533,7 +533,7 @@ function CandidatureList({ offreId, viewMode }: { offreId: number, viewMode: 'ta
               ))}
             </div>
 
-            {statusModal.statut === 'entretien' && (
+            {statusModal.statut === 'preselectionne' && (
               <div className="pt-4 border-t border-gray-100 dark:border-white/5 mt-4">
                 <Button 
                   className="w-full" 
@@ -563,8 +563,8 @@ function CandidatureList({ offreId, viewMode }: { offreId: number, viewMode: 'ta
         <CandidatureIAModal
           open={!!iaModal}
           onClose={() => setIaModal(null)}
-          candidatureId={iaModal.id}
-          candidatNom={iaModal.candidat_nom || 'Candidat'}
+          candidature={iaModal}
+          candidatNom={iaModal.candidat_username || 'Candidat'}
         />
       )}
     </>

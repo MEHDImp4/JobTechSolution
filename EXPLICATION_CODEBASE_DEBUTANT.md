@@ -163,6 +163,37 @@ Donc l'idee a dire demain est simple :
 
 "L'IA compare les competences detectees dans le CV avec les competences demandees dans l'offre, puis elle calcule un pourcentage."
 
+### Comment le score CV est calcule
+
+Le score suit une logique tres simple :
+
+1. le backend lit le texte du CV
+2. il recupere les competences demandees dans l'offre
+3. il cherche si ces mots existent dans le texte du CV
+4. il compte combien de competences ont ete trouvees
+5. il transforme ce resultat en pourcentage
+
+Exemple simple :
+
+- l'offre demande : `Python`, `Django`, `SQL`
+- dans le CV, le systeme trouve : `Python`, `Django`
+- donc il y a `2` competences trouvees sur `3`
+- le score devient environ `67%`
+
+Formule simple :
+
+`score = (nombre de competences trouvees / nombre total de competences demandees) x 100`
+
+Ce qu'il faut bien dire :
+
+- ce n'est pas une vraie IA complexe
+- c'est un matching simple base sur les mots trouves dans le CV
+- le but est d'aider a faire un premier tri des candidats
+
+Tu peux dire a la prof :
+
+"Le systeme extrait le texte du CV, cherche les competences demandees dans l'offre, puis calcule un pourcentage de compatibilite. Plus il trouve de competences, plus le score est eleve."
+
 ## 8. Les roles
 
 Les roles sont simples :

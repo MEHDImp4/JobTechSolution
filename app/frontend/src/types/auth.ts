@@ -4,7 +4,7 @@ export interface User {
   nom: string
   prenom: string
   phone: string | null
-  role: 'admin' | 'rh' | 'recruteur' | 'candidat'
+  role: 'admin' | 'rh' | 'recruteur' | 'candidat' | 'manager'
   get_full_name: string
   is_active: boolean
   date_joined: string

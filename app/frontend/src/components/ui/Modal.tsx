@@ -99,13 +99,13 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
         aria-labelledby={titleId}
         tabIndex={-1}
         className={cn(
-          'relative w-full h-full sm:h-auto sm:max-h-[90vh] bg-white sm:rounded-2xl shadow-modal flex flex-col',
+          'relative w-full h-full sm:h-auto sm:max-h-[90vh] bg-white text-gray-900 dark:bg-slate-950 dark:text-white sm:rounded-2xl shadow-modal dark:shadow-2xl dark:shadow-black/40 flex flex-col',
           'animate-fade-in',
           sizes[size]
         )}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
-          <h2 id={titleId} className="text-lg font-bold text-gray-900 truncate mr-4">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/10 shrink-0">
+          <h2 id={titleId} className="text-lg font-bold text-gray-900 dark:text-white truncate mr-4">
             {title || 'Information'}
           </h2>
           <button
