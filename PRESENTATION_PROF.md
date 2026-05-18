@@ -39,7 +39,6 @@
 Dès qu'une candidature est soumise :
 - [ ] Extraction du texte brut du CV (PDF via pypdf, DOCX via zipfile/XML)
 - [ ] Calcul d'un **score de matching** (0-100) : compétences de l'offre détectées dans le texte du CV
-- [ ] Extraction automatique de l'email et du téléphone par regex
 - [ ] Liste des compétences trouvées dans le CV
 - [ ] Ouvrir le modal **Analyse CV** depuis la liste des candidatures pour montrer tout ça
 
