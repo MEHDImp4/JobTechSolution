@@ -15,13 +15,13 @@ class OffreViewSet(viewsets.ModelViewSet):
     serializer_class = OffreSerializer
 
     def get_permissions(self):
-        # Les offres sont publiques en lecture.
+        # Les offres sont accessibles publiquement en lecture.
         if self.action in ['list', 'retrieve']:
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
 
     def get_queryset(self):
-        # Un candidat ne voit que les offres ouvertes.
+        # Les candidats n'ont accès qu'aux offres actuellement ouvertes.
         queryset = super().get_queryset()
         user = self.request.user
         
@@ -46,7 +46,7 @@ class OffreViewSet(viewsets.ModelViewSet):
         return queryset
 
     def create(self, request, *args, **kwargs):
-        # Cree une offre.
+        # Crée et publie une nouvelle offre d'emploi.
         if request.user.role not in ALLOWED_JOB_ROLES:
             return Response({'message': 'Acces refuse.'}, status=status.HTTP_403_FORBIDDEN)
         serializer = self.get_serializer(data=request.data)
@@ -55,13 +55,13 @@ class OffreViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
-        # Modifie une offre.
+        # Met à jour les informations d'une offre d'emploi existante.
         if request.user.role not in ALLOWED_JOB_ROLES:
             return Response({'message': 'Acces refuse.'}, status=status.HTTP_403_FORBIDDEN)
         return super().update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
-        # Supprime une offre.
+        # Supprime définitivement une offre d'emploi.
         if request.user.role not in ALLOWED_JOB_ROLES:
             return Response({'message': 'Acces refuse.'}, status=status.HTTP_403_FORBIDDEN)
         return super().destroy(request, *args, **kwargs)

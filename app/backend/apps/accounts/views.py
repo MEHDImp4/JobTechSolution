@@ -43,7 +43,7 @@ class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        # Cree un nouvel utilisateur.
+        # Crée un nouvel utilisateur.
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -55,7 +55,7 @@ class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        # Connecte un utilisateur avec email/username et mot de passe.
+        # Connecte un utilisateur avec e-mail/nom d'utilisateur et mot de passe.
         email = request.data.get('email')
         password = request.data.get('password')
         username = request.data.get('username')
@@ -80,7 +80,7 @@ class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        # Ferme la session courante.
+        # Déconnecte l'utilisateur et ferme la session courante.
         current_user = request.user
         create_audit_log(request, current_user, 'LOGOUT', 'accounts.user', current_user.id)
         logout(request)
@@ -102,10 +102,10 @@ class ProfileView(APIView):
         })
 
     def put(self, request):
-        # Met a jour le profil de l'utilisateur connecte.
+        # Met à jour le profil de l'utilisateur connecté.
         if not request.user.is_authenticated:
             return Response({'message': 'Non authentifié.'}, status=status.HTTP_401_UNAUTHORIZED)
-            
+
         serializer = UserSerializer(request.user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -128,7 +128,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return [permissions.IsAdminUser()]
 
     def list(self, request, *args, **kwargs):
-        # Liste les utilisateurs pour admin et RH.
+        # Récupère la liste des utilisateurs. Accès restreint aux administrateurs et responsables RH.
         if request.user.role not in {User.ROLE_ADMIN, User.ROLE_RH}:
             return Response({'detail': 'Acces refuse.'}, status=status.HTTP_403_FORBIDDEN)
         queryset = self.get_queryset()
@@ -154,13 +154,13 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(self.get_serializer(queryset, many=True).data)
 
     def retrieve(self, request, *args, **kwargs):
-        # Affiche un utilisateur pour les roles internes.
+        # Affiche les détails d'un utilisateur spécifique. Réservé au personnel interne.
         if request.user.role not in STAFF_ROLES:
             return Response({'detail': 'Acces refuse.'}, status=status.HTTP_403_FORBIDDEN)
         return super().retrieve(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
-        # Modifie un utilisateur pour admin et RH.
+        # Met à jour les données d'un utilisateur. Accès restreint aux administrateurs et responsables RH.
         if request.user.role not in {User.ROLE_ADMIN, User.ROLE_RH}:
             return Response({'detail': 'Acces refuse.'}, status=status.HTTP_403_FORBIDDEN)
         return super().update(request, *args, **kwargs)
@@ -194,7 +194,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def set_role(self, request, pk=None):
-        # Change le role d'un utilisateur.
+        # Modifie le rôle attribué à un utilisateur.
         if request.user.role not in {User.ROLE_ADMIN, User.ROLE_RH}:
             return Response({'detail': 'Acces refuse.'}, status=status.HTTP_403_FORBIDDEN)
         user = self.get_object()

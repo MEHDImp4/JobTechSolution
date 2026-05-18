@@ -17,7 +17,7 @@ class CandidatureViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def apply_simple_ai(self, application):
-        # Met a jour le texte extrait du CV et le score simple.
+        # Actualise le texte extrait du CV et calcule le score de pertinence via l'IA.
         cv_text = extract_text_from_cv(application.cv_file)
         ai_result = build_simple_ai_result(application.offre, cv_text=cv_text, message=application.lettre_motivation)
         application.cv_text = cv_text
@@ -27,7 +27,7 @@ class CandidatureViewSet(viewsets.ModelViewSet):
         application.save(update_fields=['cv_text', 'matching_score', 'ai_summary', 'ai_extracted_data'])
 
     def get_queryset(self):
-        # Un candidat ne voit que ses candidatures.
+        # Restreint la liste des candidatures à celles du candidat connecté.
         user = self.request.user
         queryset = super().get_queryset()
         if user.role in STAFF_ROLES:
@@ -35,7 +35,7 @@ class CandidatureViewSet(viewsets.ModelViewSet):
         return queryset.filter(candidat=user)
 
     def create(self, request, *args, **kwargs):
-        # Cree une candidature puis lance l'analyse simple du CV.
+        # Enregistre une nouvelle candidature et déclenche l'analyse automatique du CV.
         if request.user.role != User.ROLE_CANDIDAT:
             return Response({'message': 'Seul un candidat peut postuler.'}, status=status.HTTP_403_FORBIDDEN)
             
@@ -92,7 +92,7 @@ class CandidatureViewSet(viewsets.ModelViewSet):
         return Response(ids)
 
     def update(self, request, *args, **kwargs):
-        # Permet au staff de tout modifier et au candidat de modifier son message.
+        # Autorise la modification complète par le personnel et la modification du message par le candidat.
         application = self.get_object()
         if request.user.role not in STAFF_ROLES and application.candidat != request.user:
             return Response({'detail': 'Acces refuse.'}, status=status.HTTP_403_FORBIDDEN)
