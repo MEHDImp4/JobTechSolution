@@ -115,6 +115,8 @@ CORS_ALLOWED_ORIGINS = env.list(
         'http://127.0.0.1:3000',
         'http://localhost:5173',
         'http://127.0.0.1:5173',
+        'http://10.123.222.129:8000',
+        'http://10.123.222.129:5173',
     ],
 )
 CORS_ALLOW_CREDENTIALS = True
@@ -124,6 +126,7 @@ CSRF_TRUSTED_ORIGINS = env.list(
     default=[
         'http://localhost:5173',
         'http://127.0.0.1:5173',
+        'http://10.123.222.129:5173',
     ],
 )
 

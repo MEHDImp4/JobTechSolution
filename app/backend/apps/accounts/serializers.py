@@ -55,6 +55,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
+        # On retire les champs utilises uniquement pour la validation du formulaire.
         validated_data.pop('password_confirm')
         password = validated_data.pop('password')
         
@@ -62,6 +63,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         if not validated_data.get('username'):
             validated_data['username'] = validated_data['email']
             
+        # Creation du candidat avec mot de passe hache (jamais stocke en clair).
         user = User(**validated_data)
         user.role = User.ROLE_CANDIDAT
         user.set_password(password)
@@ -105,12 +107,15 @@ class UserAdminCreateSerializer(serializers.ModelSerializer):
         return role
 
     def create(self, validated_data):
+        # Le mot de passe est extrait pour etre transforme en hash avec set_password.
         password = validated_data.pop('password')
         if not validated_data.get('username'):
             validated_data['username'] = validated_data['email']
 
+        # Creation d'un utilisateur par un profil interne (admin/RH).
         user = User(**validated_data)
         user.set_password(password)
+        # Les roles internes recoivent is_staff pour acceder aux ecrans back-office.
         user.is_staff = user.role in {User.ROLE_ADMIN, User.ROLE_RH, User.ROLE_RECRUTEUR}
         user.save()
         return user

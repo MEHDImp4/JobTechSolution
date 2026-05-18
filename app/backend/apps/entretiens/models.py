@@ -13,6 +13,7 @@ class Entretien(models.Model):
     candidature = models.ForeignKey('candidatures.Candidature', on_delete=models.CASCADE, related_name='entretiens')
     evaluateur = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='entretiens_evalues')
     date_heure = models.DateTimeField()
+    duree_minutes = models.PositiveIntegerField(default=60)
     statut = models.CharField(max_length=15, choices=STATUTS, default='planifie')
     notes = models.TextField(blank=True)
     commentaires = models.TextField(blank=True)

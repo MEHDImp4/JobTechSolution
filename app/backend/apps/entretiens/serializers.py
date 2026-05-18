@@ -18,6 +18,7 @@ class EntretienSerializer(serializers.ModelSerializer):
             'evaluateur',
             'evaluateur_username',
             'date_heure',
+                        'duree_minutes',
             'statut',
             'notes',
             'commentaires',

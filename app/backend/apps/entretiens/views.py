@@ -1,4 +1,5 @@
 from django.shortcuts import redirect
+from datetime import timedelta
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -52,10 +53,41 @@ class EntretienViewSet(viewsets.ModelViewSet):
         if not date_heure:
             return Response({'message': 'La date de l entretien est obligatoire.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Vérifier les conflits d'horaire
+        from datetime import datetime
+        duree = int(request.data.get('duree_minutes', 60))
+        date_debut = datetime.fromisoformat(date_heure.replace('Z', '+00:00'))
+        date_fin = date_debut + timedelta(minutes=duree)
+        
+        # Vérifier si l'évaluateur est libre
+        conflict_evaluateur = Entretien.objects.filter(
+            evaluateur=evaluateur,
+            statut__in=['planifie', 'en_cours'],
+        ).exclude(
+            date_heure__gte=date_fin
+        ).exclude(
+            date_heure__lt=date_debut
+        ).exists()
+        if conflict_evaluateur:
+            return Response({'message': 'L\'évaluateur n\'est pas disponible à cette heure.'}, status=status.HTTP_409_CONFLICT)
+        
+        # Vérifier si le candidat est libre
+        conflict_candidat = Entretien.objects.filter(
+            candidature__candidat=candidature.candidat,
+            statut__in=['planifie', 'en_cours'],
+        ).exclude(
+            date_heure__gte=date_fin
+        ).exclude(
+            date_heure__lt=date_debut
+        ).exists()
+        if conflict_candidat:
+            return Response({'message': 'Le candidat n\'est pas disponible à cette heure.'}, status=status.HTTP_409_CONFLICT)
+
         entretien = Entretien.objects.create(
             candidature=candidature,
             evaluateur=evaluateur,
             date_heure=date_heure,
+                        duree_minutes=duree,
             statut=request.data.get('statut', 'planifie'),
             notes=request.data.get('notes', ''),
             commentaires=request.data.get('commentaires', ''),

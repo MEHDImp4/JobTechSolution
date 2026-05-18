@@ -43,7 +43,7 @@ class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        # Crée un nouvel utilisateur.
+        # Endpoint public d'inscription: valide les donnees puis cree un compte candidat.
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -166,11 +166,12 @@ class UserViewSet(viewsets.ModelViewSet):
         return super().update(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
-        # Cree un utilisateur depuis l'admin.
+        # Creation d'utilisateur depuis l'interface d'administration (roles internes uniquement).
         if request.user.role not in {User.ROLE_ADMIN, User.ROLE_RH}:
             return Response({'detail': 'Acces refuse.'}, status=status.HTTP_403_FORBIDDEN)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        # Le serializer gere la creation, le hash du mot de passe et is_staff selon le role.
         user = serializer.save()
         create_audit_log(request, request.user, 'CREATE_USER', 'accounts.user', user.id)
         return Response(UserAdminSerializer(user).data, status=status.HTTP_201_CREATED)
