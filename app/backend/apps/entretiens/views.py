@@ -15,7 +15,7 @@ class EntretienViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        # Un candidat ne voit que ses entretiens.
+        # Limite l'affichage des entretiens à ceux concernant le candidat connecté.
         user = self.request.user
         queryset = super().get_queryset()
         if user.role in STAFF_ROLES:
@@ -23,7 +23,7 @@ class EntretienViewSet(viewsets.ModelViewSet):
         return queryset.filter(candidature__candidat=user)
 
     def create(self, request, *args, **kwargs):
-        # Cree un entretien.
+        # Planifie un nouvel entretien (réservé au personnel autorisé).
         if request.user.role not in {User.ROLE_ADMIN, User.ROLE_RH, User.ROLE_RECRUTEUR}:
             return Response({'detail': 'Acces refuse.'}, status=status.HTTP_403_FORBIDDEN)
         serializer = self.get_serializer(data=request.data)
@@ -32,7 +32,7 @@ class EntretienViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
-        # Met a jour un entretien.
+        # Met à jour les informations d'un entretien existant.
         if request.user.role not in STAFF_ROLES:
             return Response({'detail': 'Acces refuse.'}, status=status.HTTP_403_FORBIDDEN)
         return super().update(request, *args, **kwargs)

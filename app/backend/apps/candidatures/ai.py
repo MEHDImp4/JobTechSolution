@@ -10,12 +10,12 @@ PHONE_PATTERN = re.compile(r'(\+?\d[\d\s\-\.\(\)]{7,}\d)')
 
 
 def _normalize_text(value):
-    # Nettoie les espaces pour avoir un texte plus simple a analyser.
+    # Supprime les espaces superflus pour obtenir un texte formaté et simple à analyser.
     return ' '.join(value.split())
 
 
 def extract_text_from_cv(file_field):
-    # Lit un CV PDF ou DOCX et renvoie son texte.
+    # Extrait et retourne le texte brut d'un fichier CV au format PDF ou DOCX.
     if not file_field:
         return ''
 
@@ -41,7 +41,7 @@ def extract_text_from_cv(file_field):
 
 
 def build_simple_ai_result(offre, cv_text='', message=''):
-    # Compare le texte du CV avec les competences demandees par l'offre.
+    # Évalue la pertinence du CV en comparant son contenu aux compétences requises par l'offre.
     full_text = _normalize_text(f'{cv_text} {message}').lower()
     skills = offre.skill_list()
     detected_skills = [skill for skill in skills if skill in full_text]
