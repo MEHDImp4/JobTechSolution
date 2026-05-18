@@ -7,7 +7,7 @@ export interface Offre {
   type_contrat: 'CDI' | 'CDD' | 'STAGE' | 'FREELANCE'
   salaire_min: number | null
   salaire_max: number | null
-  statut: 'brouillon' | 'publiee' | 'cloturee'
+  statut: 'brouillon' | 'publiee' | 'ouverte' | 'en_cours' | 'cloturee'
   date_publication: string | null
   date_cloture: string | null
   created_at: string

@@ -28,7 +28,7 @@ export default function OffreDetailPage() {
         
         if (user?.role === 'candidat') {
           const myApps = await candidaturesService.myApplications()
-          setHasApplied(myApps.some((app) => app.offre_id === Number(id)))
+          setHasApplied(myApps.some((app) => app.offre === Number(id)))
         }
       } catch {
         setError('Offre introuvable')
@@ -83,7 +83,7 @@ export default function OffreDetailPage() {
           </div>
         </div>
 
-        {offre.competences.length > 0 && (
+        {offre.competences?.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100">
             {offre.competences.map((comp, idx) => (
               <Badge key={`${comp}-${idx}`} variant="info">{comp}</Badge>

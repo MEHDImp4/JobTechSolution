@@ -55,13 +55,17 @@ export default function OffreFormPage() {
         reset({
           titre: offre.titre,
           description: offre.description,
-          experience_requise: offre.experience_requise,
+          experience_requise: offre.experience_requise ?? 0,
           type_contrat: offre.type_contrat,
           salaire_min: offre.salaire_min ?? undefined,
           salaire_max: offre.salaire_max ?? undefined,
           date_cloture: offre.date_cloture ?? '',
         })
-        setCompetences(offre.competences)
+        setCompetences(Array.isArray(offre.competences) ? offre.competences : [])
+        setPageLoading(false)
+      }).catch(() => {
+        toast('error', 'Impossible de charger l’offre')
+        setCompetences([])
         setPageLoading(false)
       })
     }

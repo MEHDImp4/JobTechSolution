@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Upload, Search, ToggleRight } from 'lucide-react'
+import { Plus, Upload, Search, ToggleRight } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { StatusBadge } from '@/components/ui/Badge'
@@ -25,6 +25,15 @@ export default function UsersPage() {
   const [appliedSearch, setAppliedSearch] = useState('')
   const [filterRole, setFilterRole] = useState('')
   const [importModal, setImportModal] = useState(false)
+  const [createModal, setCreateModal] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [newUser, setNewUser] = useState({
+    email: '',
+    nom: '',
+    prenom: '',
+    role: 'candidat',
+    password: 'password123',
+  })
 
   function getDisplayName(user: User) {
     return user.get_full_name || user.email
@@ -79,6 +88,32 @@ export default function UsersPage() {
     }
   }
 
+  async function handleCreateUser() {
+    if (!newUser.email || !newUser.nom || !newUser.prenom || !newUser.password) {
+      toast('error', 'Veuillez remplir les champs obligatoires')
+      return
+    }
+
+    setCreating(true)
+    try {
+      await adminService.createUser(newUser)
+      toast('success', 'Utilisateur ajouté avec succès')
+      setCreateModal(false)
+      setNewUser({
+        email: '',
+        nom: '',
+        prenom: '',
+        role: 'candidat',
+        password: 'password123',
+      })
+      loadUsers()
+    } catch {
+      toast('error', 'Impossible d’ajouter cet utilisateur')
+    } finally {
+      setCreating(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -86,9 +121,14 @@ export default function UsersPage() {
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Utilisateurs</h1>
           <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Gestion des comptes et des rôles</p>
         </div>
-        <Button onClick={() => setImportModal(true)} variant="secondary" icon={<Upload className="h-4 w-4" />}>
-          Importer CSV
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button onClick={() => setCreateModal(true)} icon={<Plus className="h-4 w-4" />}>
+            Ajouter
+          </Button>
+          <Button onClick={() => setImportModal(true)} variant="secondary" icon={<Upload className="h-4 w-4" />}>
+            Importer CSV
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -211,6 +251,57 @@ export default function UsersPage() {
               className="hidden"
             />
           </label>
+        </div>
+      </Modal>
+
+      <Modal open={createModal} onClose={() => setCreateModal(false)} title="Ajouter un utilisateur">
+        <div className="space-y-4">
+          <Input
+            label="Email"
+            type="email"
+            value={newUser.email}
+            onChange={(e) => setNewUser((current) => ({ ...current, email: e.target.value }))}
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="Nom"
+              value={newUser.nom}
+              onChange={(e) => setNewUser((current) => ({ ...current, nom: e.target.value }))}
+            />
+            <Input
+              label="Prénom"
+              value={newUser.prenom}
+              onChange={(e) => setNewUser((current) => ({ ...current, prenom: e.target.value }))}
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Rôle</label>
+              <select
+                value={newUser.role}
+                onChange={(e) => setNewUser((current) => ({ ...current, role: e.target.value }))}
+                className="w-full h-11 px-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white text-gray-900 dark:bg-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 outline-none"
+              >
+                {Object.entries(ROLES).map(([key, label]) => (
+                  <option key={key} value={key}>{label as string}</option>
+                ))}
+              </select>
+            </div>
+            <Input
+              label="Mot de passe"
+              type="text"
+              value={newUser.password}
+              onChange={(e) => setNewUser((current) => ({ ...current, password: e.target.value }))}
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="ghost" onClick={() => setCreateModal(false)}>
+              Annuler
+            </Button>
+            <Button type="button" onClick={handleCreateUser} loading={creating}>
+              Ajouter l'utilisateur
+            </Button>
+          </div>
         </div>
       </Modal>
     </div>

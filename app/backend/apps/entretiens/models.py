@@ -20,7 +20,11 @@ class Entretien(models.Model):
     score_communication = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
     score_competences = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
     score_motivation = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    score_adaptabilite = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    score_culture_fit = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
     score_global = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    points_forts = models.TextField(blank=True)
+    points_amelioration = models.TextField(blank=True)
 
     class Meta:
         ordering = ['-date_heure']

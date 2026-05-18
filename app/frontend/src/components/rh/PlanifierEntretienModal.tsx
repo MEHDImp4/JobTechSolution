@@ -79,21 +79,21 @@ export function PlanifierEntretienModal({ open, onClose, candidature, onSuccess 
   return (
     <Modal open={open} onClose={onClose} title="Planifier un entretien" size="lg">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="bg-gray-50 dark:bg-white/5 p-3 rounded-lg mb-4">
-          <p className="text-sm text-gray-600 dark:text-slate-400">
-            Candidat : <span className="font-semibold text-gray-900 dark:text-white">{(candidature as Candidature & { candidat_nom?: string }).candidat_nom}</span>
+        <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 mb-4 dark:border-white/10 dark:bg-slate-900/80">
+          <p className="text-sm text-gray-700 dark:text-slate-300">
+            Candidat : <span className="font-semibold text-gray-900 dark:text-white">{candidature.candidat_username || 'Candidat'}</span>
           </p>
-          <p className="text-sm text-gray-600 dark:text-slate-400">
+          <p className="text-sm text-gray-700 dark:text-slate-300">
             Poste : <span className="font-semibold text-gray-900 dark:text-white">{candidature.offre_titre}</span>
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Recruteur *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Recruteur *</label>
             <select
               {...register('recruteur_id')}
-              className="w-full h-11 px-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-brand-500/20 outline-none"
+              className="w-full h-11 px-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white text-gray-900 dark:bg-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 outline-none"
             >
               <option value="">Choisir un recruteur...</option>
               {recruteurs.map(r => (
@@ -113,10 +113,10 @@ export function PlanifierEntretienModal({ open, onClose, candidature, onSuccess 
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Type d'entretien *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Type d'entretien *</label>
             <select
               {...register('type_entretien')}
-              className="w-full h-11 px-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-brand-500/20 outline-none"
+              className="w-full h-11 px-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white text-gray-900 dark:bg-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 outline-none"
             >
               <option value="recrutement">Recrutement</option>
               <option value="technique">Technique</option>
@@ -126,10 +126,10 @@ export function PlanifierEntretienModal({ open, onClose, candidature, onSuccess 
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Durée *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200">Durée *</label>
             <select
               {...register('duree_minutes')}
-              className="w-full h-11 px-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-brand-500/20 outline-none"
+              className="w-full h-11 px-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white text-gray-900 dark:bg-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500/20 outline-none"
             >
               <option value="30">30 min</option>
               <option value="45">45 min</option>

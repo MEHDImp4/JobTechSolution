@@ -50,7 +50,6 @@ class MinimalBackendTests(APITestCase):
         register_response = self.client.post(
             '/accounts/register/',
             {
-                'username': 'newcandidate',
                 'email': 'newcandidate@example.com',
                 'nom': 'New',
                 'prenom': 'Candidate',
@@ -60,18 +59,21 @@ class MinimalBackendTests(APITestCase):
             format='json',
         )
         self.assertEqual(register_response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(register_response.data['role'], User.ROLE_CANDIDAT)
+        self.assertIn('message', register_response.data)
 
         login_response = self.client.post(
             '/accounts/login/',
-            {'username': 'newcandidate', 'password': 'StrongPass123'},
+            {'email': 'newcandidate@example.com', 'password': 'StrongPass123'},
             format='json',
         )
         self.assertEqual(login_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(login_response.data['email'], 'newcandidate@example.com')
+        self.assertEqual(login_response.data['role'], 'candidat')
 
         profile_response = self.client.get('/accounts/profile/')
         self.assertEqual(profile_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(profile_response.data['username'], 'newcandidate')
+        self.assertTrue(profile_response.data['authenticated'])
+        self.assertEqual(profile_response.data['user']['email'], 'newcandidate@example.com')
 
     def test_minimal_recruitment_workflow(self):
         self.client.force_authenticate(user=self.rh)

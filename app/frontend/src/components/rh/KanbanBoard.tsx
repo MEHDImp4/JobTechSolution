@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { CANDIDATURE_STATUTS } from '@/lib/constants'
-import { formatScore, getScoreColor } from '@/lib/utils'
+import { formatScore, getScoreColor, normalizeBackendFileUrl } from '@/lib/utils'
 import type { Candidature } from '@/types/candidature'
 import { StatusBadge } from '../ui/Badge'
 import { ChevronLeft, ChevronRight, FileText } from 'lucide-react'
@@ -11,11 +11,11 @@ interface KanbanBoardProps {
 }
 
 const COLUMNS = [
-  { id: 'recue', label: 'Reçue' },
-  { id: 'examen_rh', label: 'Examen RH' },
-  { id: 'entretien', label: 'Entretien' },
-  { id: 'retenu', label: 'Retenu' },
-  { id: 'refuse', label: 'Refusé' },
+  { id: 'en_attente', label: 'En attente' },
+  { id: 'en_cours', label: 'En cours' },
+  { id: 'preselectionne', label: 'Présélectionné' },
+  { id: 'accepte', label: 'Accepté' },
+  { id: 'rejete', label: 'Rejeté' },
 ]
 
 export function KanbanBoard({ candidatures, onStatusChange }: KanbanBoardProps) {
@@ -85,11 +85,11 @@ export function KanbanBoard({ candidatures, onStatusChange }: KanbanBoardProps) 
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2 min-w-0">
                         <p className="font-medium text-gray-900 dark:text-white text-sm line-clamp-1">
-                          {(cand as Candidature & { candidat_nom?: string }).candidat_nom}
+                          {cand.candidat_username || 'Candidat'}
                         </p>
                         {cand.cv_file && (
                           <a 
-                            href={cand.cv_file} 
+                            href={normalizeBackendFileUrl(cand.cv_file)} 
                             target="_blank" 
                             rel="noopener noreferrer" 
                             className="text-gray-400 hover:text-brand-600 transition-colors shrink-0" 
@@ -101,15 +101,15 @@ export function KanbanBoard({ candidatures, onStatusChange }: KanbanBoardProps) 
                           </a>
                         )}
                       </div>
-                      <span className={`text-xs font-bold ${getScoreColor(cand.score_ia)}`}>
-                        {formatScore(cand.score_ia)}
+                      <span className={`text-xs font-bold ${getScoreColor(cand.matching_score)}`}>
+                        {formatScore(cand.matching_score)}
                       </span>
                     </div>
                     
                     <div className="flex items-center justify-between mt-3">
                       <div className="flex -space-x-1">
                          <div className="h-6 w-6 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center text-[10px] font-bold text-brand-600">
-                           {(cand as Candidature & { candidat_nom?: string }).candidat_nom?.charAt(0)}
+                           {(cand.candidat_username || 'C').charAt(0)}
                          </div>
                       </div>
                       <StatusBadge className="text-[10px] px-1.5 py-0">
@@ -157,5 +157,3 @@ export function KanbanBoard({ candidatures, onStatusChange }: KanbanBoardProps) 
     </div>
   )
 }
-
-

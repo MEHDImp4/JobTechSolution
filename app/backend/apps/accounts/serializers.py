@@ -1,9 +1,14 @@
 from rest_framework import serializers
 
-from .models import User
+from .models import AuditLog, User
 
 
 class UserSerializer(serializers.ModelSerializer):
+    phone = serializers.CharField(source='telephone', allow_blank=True, required=False)
+    get_full_name = serializers.CharField(source='full_name', read_only=True)
+    role = serializers.SerializerMethodField()
+    date_joined = serializers.DateTimeField(read_only=True)
+
     class Meta:
         model = User
         fields = [
@@ -12,13 +17,18 @@ class UserSerializer(serializers.ModelSerializer):
             'email',
             'nom',
             'prenom',
-            'telephone',
+            'phone',
             'adresse',
             'date_naissance',
             'role',
             'is_active',
+            'get_full_name',
+            'date_joined',
         ]
-        read_only_fields = ['id', 'role', 'is_active']
+        read_only_fields = ['id', 'role', 'is_active', 'get_full_name', 'date_joined']
+
+    def get_role(self, obj):
+        return obj.role.lower()
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -32,12 +42,12 @@ class RegisterSerializer(serializers.ModelSerializer):
             'email',
             'nom',
             'prenom',
-            'telephone',
-            'adresse',
-            'date_naissance',
             'password',
             'password_confirm',
         ]
+        extra_kwargs = {
+            'username': {'required': False},
+        }
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
@@ -47,6 +57,11 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('password_confirm')
         password = validated_data.pop('password')
+        
+        # Utilise l'email comme username si non fourni
+        if not validated_data.get('username'):
+            validated_data['username'] = validated_data['email']
+            
         user = User(**validated_data)
         user.role = User.ROLE_CANDIDAT
         user.set_password(password)
@@ -54,19 +69,54 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 
-class UserAdminSerializer(serializers.ModelSerializer):
+class UserAdminSerializer(UserSerializer):
+    class Meta(UserSerializer.Meta):
+        fields = UserSerializer.Meta.fields + ['is_staff']
+
+
+class UserAdminCreateSerializer(serializers.ModelSerializer):
+    phone = serializers.CharField(source='telephone', allow_blank=True, required=False)
+    password = serializers.CharField(write_only=True, min_length=8)
+    role = serializers.ChoiceField(choices=User.ROLE_CHOICES)
+
     class Meta:
         model = User
         fields = [
-            'id',
             'username',
             'email',
             'nom',
             'prenom',
-            'telephone',
+            'phone',
             'adresse',
             'date_naissance',
             'role',
+            'password',
             'is_active',
-            'is_staff',
         ]
+        extra_kwargs = {
+            'username': {'required': False, 'allow_blank': True},
+            'is_active': {'required': False},
+        }
+
+    def validate_role(self, value):
+        role = value.upper()
+        if role not in dict(User.ROLE_CHOICES):
+            raise serializers.ValidationError('Role invalide.')
+        return role
+
+    def create(self, validated_data):
+        password = validated_data.pop('password')
+        if not validated_data.get('username'):
+            validated_data['username'] = validated_data['email']
+
+        user = User(**validated_data)
+        user.set_password(password)
+        user.is_staff = user.role in {User.ROLE_ADMIN, User.ROLE_RH, User.ROLE_RECRUTEUR}
+        user.save()
+        return user
+
+
+class AuditLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AuditLog
+        fields = '__all__'

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -13,31 +13,71 @@ import { ApiError } from '@/services/client'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ALLOWED_TYPES = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+const MAX_PHONE_LENGTH = 20
 
 const schema = z.object({
-  telephone: z.string().min(10, 'Numéro de téléphone requis'),
-  experience_annees: z.string().min(1, 'Expérience requise'),
-  lettre_motivation: z.string().optional(),
-  linkedin_url: z.string().url('URL LinkedIn invalide').optional().or(z.literal('')),
+  telephone: z.string()
+    .trim()
+    .min(10, 'Numéro de téléphone requis')
+    .max(MAX_PHONE_LENGTH, `Le numéro ne doit pas dépasser ${MAX_PHONE_LENGTH} caractères`),
+  experience_annees: z.coerce.number()
+    .refine((value) => Number.isFinite(value), 'Expérience requise')
+    .int('Entrez un nombre entier')
+    .min(0, 'L’expérience ne peut pas être négative')
+    .max(99, 'Valeur trop élevée'),
+  lettre_motivation: z.string().trim().optional(),
+  linkedin_url: z.string().trim().url('URL LinkedIn invalide').optional().or(z.literal('')),
 })
 
-type FormValues = z.infer<typeof schema>
+type FormValues = z.output<typeof schema>
+type FormInputValues = z.input<typeof schema>
 
 export default function ApplyPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuthStore()
   const [loading, setLoading] = useState(false)
+  const [pageLoading, setPageLoading] = useState(true)
   const [file, setFile] = useState<File | null>(null)
   const [fileError, setFileError] = useState('')
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, formState: { errors } } = useForm<FormInputValues, undefined, FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       telephone: user?.phone ?? '',
-      experience_annees: '0',
+      experience_annees: 0,
     }
   })
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function guardDuplicateApplication() {
+      if (!id || user?.role !== 'candidat') {
+        if (!cancelled) setPageLoading(false)
+        return
+      }
+
+      try {
+        const applications = await candidaturesService.myApplications()
+        if (!cancelled && applications.some((application) => application.offre === Number(id))) {
+          toast('info', 'Vous avez déjà postulé à cette offre.')
+          navigate('/mes-candidatures', { replace: true })
+          return
+        }
+      } catch {
+        // La page de candidature reste utilisable même si ce contrôle échoue.
+      } finally {
+        if (!cancelled) setPageLoading(false)
+      }
+    }
+
+    void guardDuplicateApplication()
+
+    return () => {
+      cancelled = true
+    }
+  }, [id, navigate, user?.role])
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const selected = e.target.files?.[0]
@@ -64,6 +104,11 @@ export default function ApplyPage() {
   }
 
   const onSubmit = async (data: FormValues) => {
+    if (!id) {
+      toast('error', 'Offre introuvable')
+      return
+    }
+
     if (!file) {
       setFileError('Veuillez joindre votre CV')
       return
@@ -74,19 +119,28 @@ export default function ApplyPage() {
       const formData = new FormData()
       formData.append('offre', String(id))
       formData.append('cv_file', file)
-      formData.append('telephone', data.telephone)
+      formData.append('telephone', data.telephone.trim())
       formData.append('experience_annees', String(data.experience_annees))
       if (data.lettre_motivation) formData.append('lettre_motivation', data.lettre_motivation)
-      if (data.linkedin_url) formData.append('linkedin_url', data.linkedin_url)
+      if (data.linkedin_url) formData.append('linkedin_url', data.linkedin_url.trim())
 
-      await candidaturesService.apply(formData)
-      toast('success', 'Candidature envoyée avec succès !')
+      const candidature = await candidaturesService.apply(formData)
+      const score = candidature.matching_score ?? 0
+      toast('success', `Candidature envoyée. Score CV détecté : ${Math.round(score)}%`)
       navigate('/mes-candidatures')
     } catch (err) {
       toast('error', err instanceof ApiError ? err.message : 'Erreur lors de l\'envoi')
     } finally {
       setLoading(false)
     }
+  }
+
+  if (pageLoading) {
+    return (
+      <div className="max-w-2xl mx-auto rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-500 shadow-card dark:border-white/10 dark:bg-slate-900/40 dark:text-slate-400">
+        Vérification de votre candidature en cours...
+      </div>
+    )
   }
 
   return (
@@ -146,6 +200,7 @@ export default function ApplyPage() {
             <Input
               label="Téléphone *"
               placeholder="+212 6XX XXX XXX"
+              maxLength={MAX_PHONE_LENGTH}
               error={errors.telephone?.message}
               {...register('telephone')}
             />
@@ -153,6 +208,8 @@ export default function ApplyPage() {
               label="Années d'expérience *"
               type="number"
               placeholder="Ex: 3"
+              min={0}
+              step={1}
               error={errors.experience_annees?.message}
               {...register('experience_annees')}
             />
@@ -190,7 +247,7 @@ export default function ApplyPage() {
           className="w-full"
           size="lg"
         >
-          Envoyer ma candidature
+          {loading ? 'Analyse du CV en cours...' : 'Envoyer ma candidature'}
         </Button>
       </form>
     </div>
