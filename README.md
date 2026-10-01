@@ -1,211 +1,47 @@
-# JobTech - Application de Gestion des Recrutements
+# JobTech
 
-## Presentation du Projet
+JobTech is a recruitment management application developed as a capstone project. It supports the hiring workflow from publishing job offers to reviewing applications, planning interviews, and evaluating candidates.
 
-JobTech est une application web complete de gestion du processus de recrutement, developpee dans le cadre du projet de fin d'etude. L'application permet aux entreprises de gerer les offres d'emploi, traiter les candidatures, planifier des entretiens et evaluer les candidats avec l'aide de l'intelligence artificielle.
+## Features
 
-## Architecture Technique
+- Candidate and recruiter workflows
+- Job offer and application management
+- Interview planning and candidate evaluation
+- Recruitment dashboards and reports
+- Optional AI-assisted CV summaries through NVIDIA NIM, with a local fallback
 
-L'application est constituee de deux parties distinctes:
+## Technology
 
-### Backend (Django/Python)
+- **Backend:** Django 4.2 and Python
+- **Frontend:** React, TypeScript, and Vite
+- **Database:** MySQL 8
+- **Supporting services:** Redis
+- **Local orchestration:** Docker Compose
 
-Le backend est developpe avec Django et comprend les composants suivants:
+## Run locally with Docker
 
-- **Framework**: Django 5.x avec Python 3.12
-- **API**: Django REST Framework (DRF) pour les endpoints REST
-- **Base de donnees**: PostgreSQL (configurable pour SQLite en developpement)
-- **Taches asynchrones**: Celery avec Redis pour le traitement des operations lourdes
-- **IA/NLP**: Integration de modeles de language pour l'analyse des CV
+Requirements: Docker and Docker Compose.
 
-#### Applications Django
+1. Create a local environment file:
 
-L'application backend est organisee en 9 modules distincts:
+   ```sh
+   cp .env.example .env
+   ```
 
-1. **accounts** - Gestion des utilisateurs, authentification, RBAC (Role-Based Access Control)
-2. **offres** - Gestion des offres d'emploi (CRUD, recherche, filtres)
-3. **candidatures** - Traitement des postulations et upload des CV
-4. **entretiens** - Planification et gestion des entretiens
-5. **evaluations** - Systeme d'evaluation des candidats
-6. **statistiques** - Tableaux de bord et indicateurs KPI
-7. **rapports** - Generation de rapports PDF
-8. **notifications** - Envoi d'emails automatises
-9. **ia** - Pipeline NLP et analyse de CV par IA
+2. Set a Django `SECRET_KEY` and review the development database and email settings. The example values are for local development only.
+3. Build and start the services:
 
-### Frontend (React/TypeScript)
+   ```sh
+   docker compose up --build
+   ```
 
-Le frontend est une application SPA (Single Page Application) developpee avec:
+The Compose configuration exposes the frontend at [http://localhost:5173](http://localhost:5173) and the backend at [http://localhost:8000](http://localhost:8000).
 
-- **Framework**: React 18.x avec TypeScript
-- **Build tool**: Vite
-- **Gestion d'etat**: Zustand
-- **Appels API**: Axios
-- **Tests e2e**: Playwright
-- **PWA**: Configuration pour installation hors ligne
+To enable the optional NVIDIA-powered CV summary integration, configure `NVIDIA_API_KEY`; the project documents a local fallback when it is not set.
 
-## Fonctionnalites Principales
+## Repository layout
 
-### Pour les Candidats
-
-- Creation de compte et activation par email
-- Consultation des offres d'emploi
-- Postulation a une offre avec upload de CV
-- Suivi du statut de ses candidatures
-
-### Pour les Recruteurs (RH)
-
-- Gestion des offres d'emploi (creation, modification, publication)
-- Consultation des candidatures recues
-- Tableau de bord Kanban pour le suivi des postulations
-- Planification d'entretiens avec calendrier
-- Evaluation des candidats avec systeme de notation
-- Generations de rapports PDF
-- Statistiques et graphiques analytiques
-
-### Fonctionnalites Avancees
-
-- Analyse automatique des CV par intelligence artificielle
-- Scoring des candidats base sur la compatibilite avec l'offre
-- Generations de questions d'entretien par IA
-- Notifications par email automatisees
-- Suivi simple des entretiens et des evaluations
-- Application mobile (PWA)
-
-## Installation et Configuration
-
-### Prerequisites
-
-- Python 3.12+
-- Node.js 18+
-- PostgreSQL (optionnel, SQLite pour developpement)
-- Redis (pour Celery)
-
-### Configuration du Backend
-
-1. Creation de l'environnement virtuel:
-```bash
-cd app/backend
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# ou
-venv\Scripts\activate  # Windows
-```
-
-2. Installation des dependances:
-```bash
-pip install -r requirements.txt
-```
-
-3. Configuration des variables d'environnement:
-```bash
-cp .env.example .env
-# Editer .env avec les parametres desired
-```
-
-4. Migration de la base de donnees:
-```bash
-python manage.py migrate
-```
-
-5. Creation d'un superutilisateur:
-```bash
-python manage.py createsuperuser
-```
-
-6. Lancement du serveur:
-```bash
-python manage.py runserver
-```
-
-Pour Celery (taches asynchrones):
-```bash
-celery -A jobtech worker -l info
-```
-
-### Configuration du Frontend
-
-1. Installation des dependances:
-```bash
-cd app/frontend
-npm install
-```
-
-2. Lancement du serveur de developpement:
-```bash
-npm run dev
-```
-
-### Configuration avec Docker
-
-L'application peut egalement etre lancee avec Docker Compose:
-```bash
-docker compose up --build
-```
-
-Cela demarre automatiquement tous les services necessaires (backend, frontend, PostgreSQL, Redis).
-
-## Structure du Projet
-
-```
-JobTechSolution/
-├── app/
-│   ├── backend/
-│   │   ├── apps/              # Modules Django
-│   │   │   ├── accounts/
-│   │   │   ├── offres/
-│   │   │   ├── candidatures/
-│   │   │   ├── entretiens/
-│   │   │   ├── evaluations/
-│   │   │   ├── statistiques/
-│   │   │   ├── rapports/
-│   │   │   ├── notifications/
-│   │   │   └── ia/
-│   │   ├── jobtech/           # Configuration Django
-│   │   ├── static/            # Fichiers statiques
-│   │   ├── templates/         # Templates HTML
-│   │   └── requirements.txt
-│   └── frontend/
-│       ├── src/
-│       │   ├── components/    # Composants React
-│       │   ├── pages/         # Pages de l'application
-│       │   ├── services/      # Services API
-│       │   ├── stores/        # Gestion d'etat
-│       │   └── types/         # Types TypeScript
-│       └── package.json
-├── assets/                    # Documentation
-├── docker-compose.yml
-└── README.md
-```
-
-## Technologies Utilisees
-
-### Backend
-- Django 5.x
-- Django REST Framework
-- Celery
-- PostgreSQL / SQLite
-- ReportLab (PDF)
-- Matplotlib (graphiques)
-- scikit-learn (TF-IDF)
-
-### Frontend
-- React 18
-- TypeScript
-- Vite
-- Zustand
-- Axios
-- Playwright
-- FullCalendar
-
-### Infrastructure
-- Docker / Docker Compose
-- GitHub Actions (CI/CD)
-- Redis
-
-## Equipe
-
-Projet developpe par un groupe d'etudiants dans le cadre du projet de fin d'etude.
-
-## Licence
-
-Ce projet est destine a des fins educatives.
+- `app/backend/` — Django application and API
+- `app/frontend/` — React and TypeScript client
+- `docker-compose.yml` — local backend, frontend, MySQL, and Redis services
+- `EXPLICATION_CODEBASE_DEBUTANT.md` — French-language codebase guide
