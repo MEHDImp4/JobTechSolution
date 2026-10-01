@@ -18,7 +18,6 @@ export interface Entretien {
 export interface EntretienCreatePayload {
   candidature_id: number
   recruteur_id: number
-    duree_minutes?: number
   date_heure: string
   duree_minutes?: number
   type_entretien?: string
