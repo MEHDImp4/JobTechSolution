@@ -2,7 +2,7 @@ name: "🚀 JobTech Solution CI"
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
 
