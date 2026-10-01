@@ -3,7 +3,6 @@ from datetime import timedelta
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
-from django.urls import reverse
 from django.utils import timezone
 from reportlab.pdfgen import canvas
 from rest_framework import status
@@ -95,7 +94,7 @@ class MinimalBackendTests(APITestCase):
 
         public_list_response = self.client.get('/offres/')
         self.assertEqual(public_list_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(public_list_response.data), 1)
+        self.assertTrue(any(item['id'] == offer_id for item in public_list_response.data))
 
         self.client.force_authenticate(user=self.candidat)
         cv_content = self.build_cv_pdf(
