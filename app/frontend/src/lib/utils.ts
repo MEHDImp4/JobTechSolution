@@ -21,14 +21,14 @@ export function formatDateTime(value?: string | null): string {
 
 export function formatSalary(min?: number | null, max?: number | null): string {
   const format = (amount: number) => new Intl.NumberFormat('fr-MA', { maximumFractionDigits: 0 }).format(amount)
-  if (min != null && max != null) return min === max ? `${format(min)} MAD` : `${format(min)} – ${format(max)} MAD`
-  if (min != null) return `À partir de ${format(min)} MAD`
-  if (max != null) return `Jusqu’à ${format(max)} MAD`
+  if (min != null && max != null) return min === max ? \`\${format(min)} MAD\` : \`\${format(min)} – \${format(max)} MAD\`
+  if (min != null) return \`À partir de \${format(min)} MAD\`
+  if (max != null) return \`Jusqu’à \${format(max)} MAD\`
   return 'Non spécifié'
 }
 
 export function formatScore(score?: number | null): string {
-  return score == null || Number.isNaN(score) ? '—' : `${Math.round(score)}%`
+  return score == null || Number.isNaN(score) ? '—' : \`\${Math.round(score)}%\`
 }
 
 export function getScoreColor(score?: number | null): string {
@@ -39,12 +39,12 @@ export function getScoreColor(score?: number | null): string {
 }
 
 export function getInitials(name?: string | null): string {
-  return (name ?? '').trim().split(/\\s+/).filter(Boolean).slice(0, 2).map(part => part[0].toUpperCase()).join('')
+  return (name ?? '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0].toUpperCase()).join('')
 }
 
 export function normalizeBackendFileUrl(url?: string | null): string {
   if (!url) return ''
-  if (/^(https?:)?\\/\\//i.test(url) || url.startsWith('data:')) return url
+  if (/^(https?:)?\/\//i.test(url) || url.startsWith('data:')) return url
   const base = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
-  return `${base.replace(/\\/$/, '')}/${url.replace(/^\\//, '')}`
+  return \`\${base.replace(/\/$/, '')}/\${url.replace(/^\//, '')}\`
 }
