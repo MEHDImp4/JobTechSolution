@@ -78,7 +78,7 @@ class MinimalBackendTests(APITestCase):
     def test_minimal_recruitment_workflow(self):
         self.client.force_authenticate(user=self.rh)
         offer_response = self.client.post(
-            '/jobs/',
+            '/offres/',
             {
                 'titre': 'Developpeur Django',
                 'description': 'Backend Django simple',
@@ -93,7 +93,7 @@ class MinimalBackendTests(APITestCase):
         self.assertEqual(offer_response.status_code, status.HTTP_201_CREATED)
         offer_id = offer_response.data['id']
 
-        public_list_response = self.client.get('/jobs/')
+        public_list_response = self.client.get('/offres/')
         self.assertEqual(public_list_response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(public_list_response.data), 1)
 
@@ -108,11 +108,11 @@ class MinimalBackendTests(APITestCase):
         )
         cv_file = SimpleUploadedFile('cv.pdf', cv_content, content_type='application/pdf')
         application_response = self.client.post(
-            '/applications/',
+            '/candidatures/',
             {
                 'offre': offer_id,
                 'cv_file': cv_file,
-                'message': 'Experience django python rest',
+                'lettre_motivation': 'Experience django python rest',
             },
             format='multipart',
         )
@@ -126,7 +126,7 @@ class MinimalBackendTests(APITestCase):
 
         self.client.force_authenticate(user=self.rh)
         update_application_response = self.client.patch(
-            f'/applications/{application_id}/',
+            f'/candidatures/{application_id}/',
             {'statut': 'preselectionne'},
             format='json',
         )
@@ -134,7 +134,7 @@ class MinimalBackendTests(APITestCase):
         self.assertEqual(update_application_response.data['statut'], 'preselectionne')
 
         interview_response = self.client.post(
-            '/interviews/',
+            '/entretiens/',
             {
                 'candidature': application_id,
                 'date_heure': (timezone.now() + timedelta(days=1)).isoformat(),
@@ -147,7 +147,7 @@ class MinimalBackendTests(APITestCase):
         interview_id = interview_response.data['id']
 
         evaluation_response = self.client.patch(
-            f'/interviews/{interview_id}/',
+            f'/entretiens/{interview_id}/',
             {
                 'statut': 'termine',
                 'commentaires': 'Bon potentiel',
@@ -163,7 +163,7 @@ class MinimalBackendTests(APITestCase):
         self.assertEqual(evaluation_response.data['statut'], 'termine')
         self.assertEqual(evaluation_response.data['score_global'], 85)
 
-        stats_response = self.client.get('/reports/stats/')
+        stats_response = self.client.get('/statistiques/stats/')
         self.assertEqual(stats_response.status_code, status.HTTP_200_OK)
         self.assertEqual(stats_response.data['total_offres'], 1)
         self.assertEqual(stats_response.data['total_candidatures'], 1)

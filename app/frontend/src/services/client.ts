@@ -25,25 +25,37 @@ function ensureTrailingSlash(path: string): string {
   return path.endsWith('/') ? path : path + '/'
 }
 
+export type ApiErrorPayload = Record<string, unknown> | null
+
+function normalizeApiErrorPayload(data: unknown): ApiErrorPayload {
+  if (data === null || typeof data !== 'object' || Array.isArray(data)) {
+    return null
+  }
+  return data as Record<string, unknown>
+}
+
+function getApiErrorMessage(data: ApiErrorPayload): string | undefined {
+  if (!data) return undefined
+
+  if (typeof data.message === 'string') {
+    return data.message
+  }
+
+  const firstError = Object.values(data)[0]
+  const firstMessage = Array.isArray(firstError) ? firstError[0] : firstError
+  return typeof firstMessage === 'string' ? firstMessage : undefined
+}
+
 export class ApiError extends Error {
   status: number
-  data: any
+  data: ApiErrorPayload
 
-  constructor(status: number, data: any) {
-    let message = data?.message
-    
-    // Si pas de message global, on cherche dans les erreurs de champs (DRF style)
-    if (!message && data && typeof data === 'object') {
-      const firstKey = Object.keys(data)[0]
-      if (firstKey) {
-        const error = data[firstKey]
-        message = Array.isArray(error) ? error[0] : error
-      }
-    }
-
-    super(message ?? `Erreur ${status}`)
+  constructor(status: number, data: unknown) {
+    const payload = normalizeApiErrorPayload(data)
+    super(getApiErrorMessage(payload) ?? `Erreur ${status}`)
+    this.name = 'ApiError'
     this.status = status
-    this.data = data
+    this.data = payload
   }
 }
 

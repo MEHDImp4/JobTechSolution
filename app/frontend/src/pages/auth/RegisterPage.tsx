@@ -27,6 +27,18 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
+const registrationFields: Array<keyof FormValues> = [
+  'nom',
+  'prenom',
+  'email',
+  'password',
+  'password_confirm',
+]
+
+function isRegistrationField(field: string): field is keyof FormValues {
+  return registrationFields.includes(field as keyof FormValues)
+}
+
 export default function RegisterPage() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
@@ -41,13 +53,13 @@ export default function RegisterPage() {
       const res = await authService.register(data)
       toast('success', res.message)
       navigate('/connexion')
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof ApiError && err.data && typeof err.data === 'object') {
         // Map backend errors to form fields
         Object.entries(err.data).forEach(([key, value]) => {
-          const message = Array.isArray(value) ? value[0] : value
-          if (['nom', 'prenom', 'email', 'password', 'password_confirm'].includes(key)) {
-            setError(key as any, { type: 'manual', message: message as string })
+          const fieldMessage = Array.isArray(value) ? value[0] : value
+          if (isRegistrationField(key) && typeof fieldMessage === 'string') {
+            setError(key, { type: 'manual', message: fieldMessage })
           }
         })
       }
