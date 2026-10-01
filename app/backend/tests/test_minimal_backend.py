@@ -94,7 +94,7 @@ class MinimalBackendTests(APITestCase):
 
         public_list_response = self.client.get('/offres/')
         self.assertEqual(public_list_response.status_code, status.HTTP_200_OK)
-        self.assertTrue(any(item['id'] == offer_id for item in public_list_response.data))
+        self.assertTrue(any(item['id'] == offer_id for item in public_list_response.data['results']))
 
         self.client.force_authenticate(user=self.candidat)
         cv_content = self.build_cv_pdf(
