@@ -39,7 +39,7 @@ export function getScoreColor(score?: number | null): string {
 }
 
 export function getInitials(name?: string | null): string {
-  return (name ?? '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0].toUpperCase()).join('')
+  return (name ?? '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map(part => part.charAt(0).toUpperCase()).join('')
 }
 
 export function normalizeBackendFileUrl(url?: string | null): string {
